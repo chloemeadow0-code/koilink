@@ -39,4 +39,4 @@ jobs:
         with:
           tag_name: app-${{ github.run_number }}
           name: KoiLink App v1.0.0 (build ${{ github.run_number }})
-          files: KoiLink-v1.0.0.apk
+          files: app-android/KoiLink-v1.0.0.apk
