@@ -1,0 +1,172 @@
+/*
+Theme Name: Koilink
+Theme URI: https://github.com/sue1231511/koilink
+Author: Koilink
+Description: 小红书风格图片瀑布流主题，配合 BuddyPress + rtMedia 使用：首页为双列图片卡片流。
+Version: 0.2.0
+License: GPL-2.0-or-later
+Text Domain: koilink
+*/
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	background: #f5f6f7;
+	color: #222;
+	font: 14px/1.6 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+a { color: inherit; }
+
+/* 顶栏 */
+.topbar {
+	position: sticky;
+	top: 0;
+	z-index: 99;
+	background: #fff;
+	border-bottom: 1px solid #ececec;
+}
+
+.topbar-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 16px;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.brand {
+	color: #ff2442;
+	font-weight: 800;
+	font-size: 20px;
+	text-decoration: none;
+	letter-spacing: 1px;
+}
+
+.topbar-actions a {
+	margin-left: 14px;
+	color: #333;
+	text-decoration: none;
+	font-size: 14px;
+}
+
+.post-btn {
+	background: #ff2442;
+	color: #fff !important;
+	padding: 7px 18px;
+	border-radius: 18px;
+	font-weight: 600;
+}
+
+/* 瀑布流 */
+.feed {
+	max-width: 1200px;
+	margin: 16px auto;
+	padding: 0 16px;
+	column-count: 2;
+	column-gap: 12px;
+}
+
+@media (min-width: 768px) { .feed { column-count: 3; } }
+@media (min-width: 1200px) { .feed { column-count: 4; } }
+
+.card {
+	display: block;
+	break-inside: avoid;
+	background: #fff;
+	border-radius: 12px;
+	overflow: hidden;
+	margin: 0 0 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+	text-decoration: none;
+	color: #222;
+}
+
+.card-media img {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.card-body { padding: 10px 12px 8px; }
+
+.card-caption {
+	font-size: 14px;
+	line-height: 1.5;
+	max-height: 42px;
+	overflow: hidden;
+	word-break: break-word;
+}
+
+.card-meta {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 8px;
+	color: #8a8a8a;
+	font-size: 12px;
+}
+
+.card-meta img {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+}
+
+.card-meta .name {
+	color: #666;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	max-width: 40%;
+}
+
+.card-meta .date { margin-left: auto; }
+
+.feed-nav {
+	max-width: 1200px;
+	margin: 8px auto 48px;
+	text-align: center;
+}
+
+.feed-nav a {
+	display: inline-block;
+	background: #fff;
+	border: 1px solid #eee;
+	padding: 8px 26px;
+	border-radius: 18px;
+	color: #ff2442;
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.empty-tip {
+	text-align: center;
+	color: #999;
+	padding: 90px 20px;
+}
+
+/* 内容页（文章/页面/BuddyPress 页面容器） */
+.content-page {
+	max-width: 760px;
+	margin: 24px auto;
+	background: #fff;
+	border-radius: 12px;
+	padding: 28px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+}
+
+.content-page h1, .content-page h2 { line-height: 1.4; }
+.content-page img { max-width: 100%; height: auto; }
+
+.site-footer {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px 16px 36px;
+	color: #b3b3b3;
+	font-size: 12px;
+	text-align: center;
+}
