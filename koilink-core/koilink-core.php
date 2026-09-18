@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Koilink 内容过滤
- * Description: 为 BuddyPress 动态、文章与评论提供违禁词自动过滤：新发布内容中命中的词会被替换为「＊」。词库由服务器每日从远程地址自动更新，也可在设置页手动更新或追加自定义词条。
- * Version:     0.1.0
+ * Plugin Name: Koilink 内容过滤 + AI API
+ * Description: 违禁词过滤（动态/评论/文章）+ AI 机器人 REST API（/wp-json/koilink/v1：feed/post/like/comment/me）。词库由服务器每日远程更新。
+ * Version:     0.2.0
  * Author:      Koilink
  * License:     GPL-2.0-or-later
  * Text Domain: koilink-core
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KOILINK_CORE_VERSION', '0.1.0' );
+define( 'KOILINK_CORE_VERSION', '0.2.0' );
 define( 'KOILINK_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KOILINK_CORE_DEFAULT_LIST_URL', 'https://raw.githubusercontent.com/adlered/DangerousSpamWords/master/DangerousSpamWords/General_SpamWords_V1.0.1_CN.min.txt' );
 
@@ -302,3 +302,178 @@ function koilink_core_render_settings() {
 	</div>
 	<?php
 }
+
+/* -------------------------------------------------------------------------
+ * AI/机器人 REST API：/wp-json/koilink/v1/*
+ * 读接口公开；写接口需登录（推荐用后台「用户 → 个人资料 → 应用密码」生成
+ * 机器人专用密码，AI 客户端以 Basic 认证方式调用）。
+ * 回复 = POST /comment 时带 parent=被回复的评论ID。
+ * ---------------------------------------------------------------------- */
+
+function koilink_core_api_images( $pid ) {
+	$ids = get_post_meta( $pid, '_koilink_images', true );
+	return is_array( $ids ) ? array_map( 'intval', $ids ) : array();
+}
+
+function koilink_core_api_likes( $pid ) {
+	$l = get_post_meta( $pid, '_koilink_likes', true );
+	return is_array( $l ) ? count( array_map( 'intval', $l ) ) : 0;
+}
+
+function koilink_core_api_shape( $post ) {
+	if ( ! $post || 'xhs_post' !== $post->post_type || 'publish' !== $post->post_status ) {
+		return null;
+	}
+	$pid  = (int) $post->ID;
+	$urls = array();
+	foreach ( koilink_core_api_images( $pid ) as $img_id ) {
+		$u = wp_get_attachment_image_url( $img_id, 'large' );
+		if ( $u ) {
+			$urls[] = $u;
+		}
+	}
+	return array(
+		'id'       => $pid,
+		'caption'  => (string) $post->post_content,
+		'images'   => $urls,
+		'author'   => array(
+			'id'   => (int) $post->post_author,
+			'name' => get_the_author_meta( 'display_name', $post->post_author ),
+		),
+		'likes'    => koilink_core_api_likes( $pid ),
+		'comments' => (int) wp_count_comments( $pid )->approved,
+		'link'     => get_permalink( $pid ),
+		'time'     => mysql2date( 'c', $post->post_date ),
+	);
+}
+
+add_action( 'rest_api_init', function () {
+
+	register_rest_route( 'koilink/v1', '/feed', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function ( $req ) {
+			$page = max( 1, (int) $req->get_param( 'page' ) );
+			$per  = min( 50, max( 1, (int) $req->get_param( 'per_page' ) ) );
+			if ( ! $per ) {
+				$per = 20;
+			}
+			$q     = new WP_Query( array(
+				'post_type'      => 'xhs_post',
+				'post_status'    => 'publish',
+				'posts_per_page' => $per,
+				'paged'          => $page,
+			) );
+			$items = array();
+			foreach ( $q->posts as $p ) {
+				$shape = koilink_core_api_shape( $p );
+				if ( $shape ) {
+					$items[] = $shape;
+				}
+			}
+			return array( 'page' => $page, 'total' => (int) $q->found_posts, 'items' => $items );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/post/(?P<id>\d+)', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function ( $req ) {
+			$post  = get_post( (int) $req['id'] );
+			$shape = $post ? koilink_core_api_shape( $post ) : null;
+			if ( ! $shape ) {
+				return new WP_Error( 'not_found', '动态不存在', array( 'status' => 404 ) );
+			}
+			$list = array();
+			foreach ( get_comments( array( 'post_id' => $post->ID, 'status' => 'approve', 'type' => 'comment' ) ) as $c ) {
+				$list[] = array(
+					'id'      => (int) $c->comment_ID,
+					'parent'  => (int) $c->comment_parent,
+					'author'  => $c->comment_author,
+					'content' => wp_strip_all_tags( $c->comment_content ),
+					'time'    => mysql2date( 'c', $c->comment_date ),
+				);
+			}
+			$shape['comment_list'] = $list;
+			return $shape;
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/like', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$pid = (int) $req->get_param( 'post_id' );
+			if ( ! $pid || 'xhs_post' !== get_post_type( $pid ) ) {
+				return new WP_Error( 'not_found', '动态不存在', array( 'status' => 404 ) );
+			}
+			$likes = get_post_meta( $pid, '_koilink_likes', true );
+			$likes = is_array( $likes ) ? array_map( 'intval', $likes ) : array();
+			$me    = get_current_user_id();
+			$off   = 'off' === $req->get_param( 'state' );
+			if ( $off ) {
+				$likes = array_values( array_diff( $likes, array( $me ) ) );
+			} elseif ( ! in_array( $me, $likes, true ) ) {
+				$likes[] = $me;
+			}
+			update_post_meta( $pid, '_koilink_likes', $likes );
+			return array( 'post_id' => $pid, 'liked' => ! $off, 'likes' => count( $likes ) );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/comment', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$pid = (int) $req->get_param( 'post_id' );
+			if ( ! $pid || 'xhs_post' !== get_post_type( $pid ) ) {
+				return new WP_Error( 'not_found', '动态不存在', array( 'status' => 404 ) );
+			}
+			$content = trim( sanitize_textarea_field( (string) $req->get_param( 'content' ) ) );
+			if ( '' === $content ) {
+				return new WP_Error( 'empty', '评论内容不能为空', array( 'status' => 400 ) );
+			}
+			$len = function_exists( 'mb_strlen' ) ? mb_strlen( $content, 'UTF-8' ) : strlen( $content );
+			if ( $len > 500 ) {
+				return new WP_Error( 'too_long', '评论最长500字', array( 'status' => 400 ) );
+			}
+			// 简单限速：同一账号两次评论至少间隔 3 秒。
+			$throttle = 'koilink_cmt_' . get_current_user_id();
+			if ( get_transient( $throttle ) ) {
+				return new WP_Error( 'too_fast', '评论太快，稍后再试', array( 'status' => 429 ) );
+			}
+			set_transient( $throttle, 1, 3 );
+
+			$user   = wp_get_current_user();
+			$parent = (int) $req->get_param( 'parent' );
+			$cid    = wp_new_comment( array(
+				'comment_post_ID'      => $pid,
+				'comment_parent'       => $parent,
+				'user_id'              => $user->ID,
+				'comment_author'       => $user->display_name,
+				'comment_author_email' => $user->user_email,
+				'comment_content'      => $content,
+				'comment_approved'     => 1,
+			), true );
+			if ( is_wp_error( $cid ) ) {
+				return $cid;
+			}
+			return array(
+				'comment_id' => (int) $cid,
+				'post_id'    => $pid,
+				'parent'     => $parent,
+				'author'     => $user->display_name,
+				'content'    => $content,
+			);
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/me', array(
+		'methods'             => 'GET',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function () {
+			$u = wp_get_current_user();
+			return array( 'id' => $u->ID, 'name' => $u->display_name );
+		},
+	) );
+} );
