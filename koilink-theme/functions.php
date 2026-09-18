@@ -29,8 +29,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.3.0' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.3.0', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.3.1' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.3.1', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
@@ -68,11 +68,14 @@ add_action( 'after_switch_theme', function () {
 	flush_rewrite_rules();
 } );
 
-// 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建。
+// 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建；顺便保证评论需登录。
 add_action( 'admin_init', function () {
 	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) ) {
 		koilink_ensure_pages();
 		flush_rewrite_rules();
+	}
+	if ( '1' !== get_option( 'comment_registration' ) ) {
+		update_option( 'comment_registration', '1' );
 	}
 } );
 
@@ -111,6 +114,26 @@ add_filter( 'the_title', function ( $title, $post_id = null ) {
 	}
 	return $title;
 }, 10, 2 );
+
+/**
+ * 评论行（小红书式：头像 + 昵称 + 时间 + 内容）。
+ */
+function koilink_comment_row( $comment, $args, $depth ) {
+	?>
+	<li <?php comment_class(); ?> id="comment-<?php comment_ID(); ?>">
+		<div class="cmt-row">
+			<span class="cmt-avatar"><?php echo get_avatar( $comment, 64 ); ?></span>
+			<div class="cmt-main">
+				<div class="cmt-head">
+					<span class="cmt-name"><?php echo esc_html( get_comment_author( $comment ) ); ?></span>
+					<span class="cmt-time"><?php echo esc_html( get_comment_date( 'm月d日 H:i', $comment ) ); ?></span>
+				</div>
+				<div class="cmt-text"><?php comment_text(); ?></div>
+			</div>
+		</div>
+	<?php
+	// </li> 由 WordPress 自动补齐。
+}
 
 /**
  * AJAX：发布动态（可选图片，最多 9 张）。
