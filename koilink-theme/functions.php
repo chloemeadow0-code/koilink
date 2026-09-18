@@ -1,6 +1,6 @@
 <?php
 /**
- * Koilink 主题：动态 CPT + 发布/点赞接口 + 页面自动创建
+ * Koilink 主题：动态 CPT + 发布/点赞接口 + 页面自动创建 + PWA
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,6 +17,9 @@ add_action( 'init', function () {
 	// 前台隐藏 WordPress 管理栏（App 化体验，后台 /wp-admin 不受影响）。
 	add_filter( 'show_admin_bar', '__return_false' );
 
+	// PWA：让 Service Worker 挂在站点根路径（scope=/）。
+	add_rewrite_rule( '^sw\.js$', 'index.php?koilink_sw=1', 'top' );
+
 	register_post_type( 'xhs_post', array(
 		'labels'       => array( 'name' => '动态', 'singular_name' => '动态' ),
 		'public'       => true,
@@ -29,8 +32,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.3.1' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.3.1', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.0' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.0', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
@@ -77,6 +80,10 @@ add_action( 'admin_init', function () {
 	if ( '1' !== get_option( 'comment_registration' ) ) {
 		update_option( 'comment_registration', '1' );
 	}
+	if ( ! get_option( 'koilink_rules_flushed' ) ) {
+		flush_rewrite_rules();
+		update_option( 'koilink_rules_flushed', 1 );
+	}
 } );
 
 function koilink_page_url( $slug ) {
@@ -102,7 +109,7 @@ function koilink_msg_url() {
 }
 
 /**
- * 无标题动态：用文案开头充当标题（修正评论数标题「《""》」和浏览器标签页标题）。
+ * 无标题动态：用文案开头充当标题（修正评论数标题和浏览器标签页标题）。
  */
 add_filter( 'the_title', function ( $title, $post_id = null ) {
 	if ( $post_id && 'xhs_post' === get_post_type( $post_id ) && '' === trim( (string) $title ) ) {
@@ -132,8 +139,42 @@ function koilink_comment_row( $comment, $args, $depth ) {
 			</div>
 		</div>
 	<?php
-	// </li> 由 WordPress 自动补齐。
 }
+
+/* -------------------------------------------------------------------------
+ * PWA：App 化（添加到主屏幕 / Service Worker / 图标）
+ * ---------------------------------------------------------------------- */
+
+add_action( 'wp_head', function () {
+	$t = get_template_directory_uri();
+	echo '<meta name="theme-color" content="#ff2442">' . "\n";
+	echo '<link rel="manifest" href="' . esc_url( $t . '/manifest.json' ) . '">' . "\n";
+	echo '<link rel="apple-touch-icon" href="' . esc_url( $t . '/apple-touch-icon.png' ) . '">' . "\n";
+	echo '<meta name="apple-mobile-web-app-capable" content="yes">' . "\n";
+	echo '<meta name="apple-mobile-web-app-title" content="KoiLink">' . "\n";
+} );
+
+add_filter( 'query_vars', function ( $vars ) {
+	$vars[] = 'koilink_sw';
+	return $vars;
+} );
+
+add_action( 'template_redirect', function () {
+	if ( ! get_query_var( 'koilink_sw' ) ) {
+		return;
+	}
+	header( 'Content-Type: application/javascript; charset=utf-8' );
+	header( 'Service-Worker-Allowed: /' );
+	readfile( get_template_directory() . '/sw.js' );
+	exit;
+} );
+
+add_action( 'wp_footer', function () {
+	if ( is_admin() ) {
+		return;
+	}
+	echo '<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>';
+} );
 
 /**
  * AJAX：发布动态（可选图片，最多 9 张）。
