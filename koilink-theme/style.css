@@ -2,8 +2,8 @@
 Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
-Description: 小红书风格图片瀑布流主题，配合 BuddyPress + rtMedia 使用：首页为双列图片卡片流。
-Version: 0.2.0
+Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
+Version: 0.3.0
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -15,6 +15,7 @@ body {
 	background: #f5f6f7;
 	color: #222;
 	font: 14px/1.6 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+	padding-bottom: 62px;
 }
 
 a { color: inherit; }
@@ -32,7 +33,7 @@ a { color: inherit; }
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 0 16px;
-	height: 56px;
+	height: 50px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -41,7 +42,7 @@ a { color: inherit; }
 .brand {
 	color: #ff2442;
 	font-weight: 800;
-	font-size: 20px;
+	font-size: 19px;
 	text-decoration: none;
 	letter-spacing: 1px;
 }
@@ -53,21 +54,13 @@ a { color: inherit; }
 	font-size: 14px;
 }
 
-.post-btn {
-	background: #ff2442;
-	color: #fff !important;
-	padding: 7px 18px;
-	border-radius: 18px;
-	font-weight: 600;
-}
-
 /* 瀑布流 */
 .feed {
 	max-width: 1200px;
-	margin: 16px auto;
-	padding: 0 16px;
+	margin: 12px auto;
+	padding: 0 12px;
 	column-count: 2;
-	column-gap: 12px;
+	column-gap: 10px;
 }
 
 @media (min-width: 768px) { .feed { column-count: 3; } }
@@ -77,9 +70,9 @@ a { color: inherit; }
 	display: block;
 	break-inside: avoid;
 	background: #fff;
-	border-radius: 12px;
+	border-radius: 10px;
 	overflow: hidden;
-	margin: 0 0 12px;
+	margin: 0 0 10px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
 	text-decoration: none;
 	color: #222;
@@ -91,12 +84,12 @@ a { color: inherit; }
 	display: block;
 }
 
-.card-body { padding: 10px 12px 8px; }
+.card-body { padding: 8px 10px 8px; }
 
 .card-caption {
-	font-size: 14px;
+	font-size: 13px;
 	line-height: 1.5;
-	max-height: 42px;
+	max-height: 40px;
 	overflow: hidden;
 	word-break: break-word;
 }
@@ -105,14 +98,14 @@ a { color: inherit; }
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	margin-top: 8px;
+	margin-top: 7px;
 	color: #8a8a8a;
 	font-size: 12px;
 }
 
 .card-meta img {
-	width: 20px;
-	height: 20px;
+	width: 18px;
+	height: 18px;
 	border-radius: 50%;
 }
 
@@ -121,14 +114,19 @@ a { color: inherit; }
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	max-width: 40%;
+	max-width: 38%;
 }
 
-.card-meta .date { margin-left: auto; }
+.card-meta .like {
+	margin-left: auto;
+	color: #999;
+}
+
+.card-meta .like.liked, .like-btn.liked { color: #ff2442; }
 
 .feed-nav {
 	max-width: 1200px;
-	margin: 8px auto 48px;
+	margin: 6px auto 40px;
 	text-align: center;
 }
 
@@ -149,23 +147,207 @@ a { color: inherit; }
 	padding: 90px 20px;
 }
 
+/* 底部 Tab 栏 */
+.tabbar {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100;
+	background: #fff;
+	border-top: 1px solid #ececec;
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	height: 56px;
+	padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	text-decoration: none;
+	color: #999;
+	font-size: 11px;
+	line-height: 1.2;
+	gap: 2px;
+}
+
+.tab .ico { font-size: 20px; font-style: normal; }
+.tab.on { color: #ff2442; font-weight: 600; }
+
+.tab-plus {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tab-plus span {
+	background: #ff2442;
+	color: #fff;
+	font-size: 26px;
+	font-weight: 700;
+	width: 42px;
+	height: 32px;
+	line-height: 32px;
+	text-align: center;
+	border-radius: 10px;
+}
+
 /* 内容页（文章/页面/BuddyPress 页面容器） */
 .content-page {
 	max-width: 760px;
-	margin: 24px auto;
+	margin: 20px auto;
 	background: #fff;
-	border-radius: 12px;
-	padding: 28px;
+	border-radius: 10px;
+	padding: 24px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
 }
 
 .content-page h1, .content-page h2 { line-height: 1.4; }
 .content-page img { max-width: 100%; height: auto; }
 
+/* 动态详情页 */
+.detail {
+	max-width: 640px;
+	margin: 14px auto;
+	background: #fff;
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+}
+
+.detail-author {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+}
+
+.detail-author img { width: 38px; height: 38px; border-radius: 50%; }
+.detail-author .who b { display: block; font-size: 14px; }
+.detail-author .who time { color: #999; font-size: 12px; }
+
+.detail-images img { width: 100%; height: auto; display: block; }
+
+.detail-caption {
+	padding: 12px 16px;
+	font-size: 15px;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.detail-actions {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	padding: 4px 16px 12px;
+}
+
+.like-btn {
+	border: 0;
+	background: none;
+	font-size: 15px;
+	color: #666;
+	cursor: pointer;
+	padding: 4px 0;
+}
+
+.cmt-count { color: #666; font-size: 15px; }
+
+.detail .comments-area { padding: 0 16px 16px; border-top: 1px solid #f2f2f2; }
+.detail .comment-list { list-style: none; padding: 0; }
+.detail .comment-list li { padding: 8px 0; border-bottom: 1px solid #f7f7f7; font-size: 13px; }
+.detail .comment-form textarea { width: 100%; }
+
+/* 发布页 */
+.publish-page {
+	max-width: 560px;
+	margin: 16px auto;
+	background: #fff;
+	border-radius: 10px;
+	padding: 20px 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+}
+
+.publish-page h1 { font-size: 18px; margin: 0 0 14px; }
+
+.pub-images { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+.pub-picker {
+	width: 78px;
+	height: 78px;
+	border: 1px dashed #ccc;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color: #999;
+	font-size: 12px;
+	cursor: pointer;
+	line-height: 1.4;
+}
+
+.pub-preview { display: contents; }
+.pub-preview img {
+	width: 78px;
+	height: 78px;
+	object-fit: cover;
+	border-radius: 8px;
+}
+
+#pub-caption {
+	width: 100%;
+	border: 1px solid #eee;
+	border-radius: 8px;
+	padding: 10px;
+	font: inherit;
+	min-height: 110px;
+}
+
+.pub-submit {
+	margin-top: 12px;
+	background: #ff2442;
+	color: #fff;
+	border: 0;
+	font-size: 15px;
+	font-weight: 600;
+	padding: 10px 34px;
+	border-radius: 20px;
+	cursor: pointer;
+}
+
+.pub-tip { color: #999; min-height: 20px; margin: 10px 0 0; }
+
+/* 我的页面 */
+.me-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0 14px;
+}
+
+.me-head img { width: 56px; height: 56px; border-radius: 50%; }
+.me-links a { margin-right: 12px; color: #666; text-decoration: none; font-size: 13px; }
+
+.me-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+}
+
+.me-grid a { display: block; }
+.me-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+
 .site-footer {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 20px 16px 36px;
+	padding: 18px 16px 26px;
 	color: #b3b3b3;
 	font-size: 12px;
 	text-align: center;
