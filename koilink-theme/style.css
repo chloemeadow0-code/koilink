@@ -3,7 +3,7 @@ Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
 Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
-Version: 0.3.0
+Version: 0.3.1
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -259,10 +259,67 @@ a { color: inherit; }
 
 .cmt-count { color: #666; font-size: 15px; }
 
-.detail .comments-area { padding: 0 16px 16px; border-top: 1px solid #f2f2f2; }
-.detail .comment-list { list-style: none; padding: 0; }
-.detail .comment-list li { padding: 8px 0; border-bottom: 1px solid #f7f7f7; font-size: 13px; }
-.detail .comment-form textarea { width: 100%; }
+.detail .comments-area { padding: 0 16px 18px; border-top: 1px solid #f2f2f2; }
+
+.cmt-title {
+	font-size: 14px;
+	color: #666;
+	margin: 14px 0 4px;
+}
+
+.cmt-title .cmt-num { color: #ff2442; font-weight: 700; }
+
+.cmt-list { list-style: none; margin: 0; padding: 0; }
+.cmt-list .children { list-style: none; padding-left: 42px; }
+
+.cmt-list .cmt-row {
+	display: flex;
+	gap: 10px;
+	padding: 10px 0;
+	border-bottom: 1px solid #f7f7f7;
+}
+
+.cmt-avatar { flex: none; }
+.cmt-avatar img { width: 32px; height: 32px; border-radius: 50%; display: block; }
+
+.cmt-main { flex: 1; min-width: 0; }
+
+.cmt-head {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+}
+
+.cmt-name { font-size: 13px; color: #666; font-weight: 600; }
+.cmt-time { font-size: 12px; color: #bbb; }
+
+.cmt-text { font-size: 14px; margin-top: 2px; word-break: break-word; }
+.cmt-text p { margin: 0; }
+
+.cmt-empty { color: #bbb; font-size: 13px; padding: 8px 0; }
+
+.cmt-login { padding: 10px 0 0; }
+.cmt-login a { color: #ff2442; text-decoration: none; font-size: 14px; }
+
+.cmt-field textarea {
+	width: 100%;
+	border: 1px solid #eee;
+	border-radius: 8px;
+	padding: 10px;
+	font: inherit;
+	resize: vertical;
+}
+
+.cmt-submit {
+	background: #ff2442;
+	color: #fff;
+	border: 0;
+	font-size: 14px;
+	font-weight: 600;
+	padding: 8px 30px;
+	border-radius: 18px;
+	cursor: pointer;
+}
 
 /* 发布页 */
 .publish-page {
