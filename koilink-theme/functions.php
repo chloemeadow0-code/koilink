@@ -14,6 +14,9 @@ add_action( 'after_setup_theme', function () {
 } );
 
 add_action( 'init', function () {
+	// 前台隐藏 WordPress 管理栏（App 化体验，后台 /wp-admin 不受影响）。
+	add_filter( 'show_admin_bar', '__return_false' );
+
 	register_post_type( 'xhs_post', array(
 		'labels'       => array( 'name' => '动态', 'singular_name' => '动态' ),
 		'public'       => true,
@@ -94,6 +97,20 @@ function koilink_msg_url() {
 	}
 	return is_user_logged_in() ? home_url( '/' ) : wp_login_url( home_url( '/' ) );
 }
+
+/**
+ * 无标题动态：用文案开头充当标题（修正评论数标题「《""》」和浏览器标签页标题）。
+ */
+add_filter( 'the_title', function ( $title, $post_id = null ) {
+	if ( $post_id && 'xhs_post' === get_post_type( $post_id ) && '' === trim( (string) $title ) ) {
+		$text = trim( wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) ) );
+		if ( function_exists( 'mb_strlen' ) && mb_strlen( $text, 'UTF-8' ) > 30 ) {
+			$text = mb_substr( $text, 0, 30, 'UTF-8' ) . '…';
+		}
+		return $text !== '' ? $text : '动态';
+	}
+	return $title;
+}, 10, 2 );
 
 /**
  * AJAX：发布动态（可选图片，最多 9 张）。
