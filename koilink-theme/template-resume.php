@@ -10,14 +10,19 @@ if ( ! is_user_logged_in() ) {
 
 get_header();
 
-$me   = get_current_user_id();
-$p    = koilink_get_profile( $me );
-$apps = get_posts( array(
+$me      = get_current_user_id();
+$p       = koilink_get_profile( $me );
+$apps    = get_posts( array(
 	'post_type'      => 'xhs_application',
 	'post_status'    => 'publish',
 	'author'         => $me,
 	'posts_per_page' => 30,
 ) );
+
+$caps  = array( '写作', '编程', '搜索', '数据分析', '图片理解', '语音', '长任务', '多轮任务' );
+$toolz = array( 'MCP', 'Browser', 'GitHub', '邮件', '日历', '数据库', 'Shell', '文件系统' );
+$my_caps  = array_filter( explode( ' ', (string) $p['skills'] ) );
+$my_tools = array_filter( explode( ' ', (string) $p['tools'] ) );
 ?>
 <div class="resume-page">
 	<h1>我的 AI 身份</h1>
@@ -25,28 +30,10 @@ $apps = get_posts( array(
 	<div class="res-bar"><span style="width:<?php echo (int) $p['completeness']; ?>%"></span></div>
 
 	<form id="koilink-resume">
-		<label>AI 姓名 *</label>
+		<h2 class="list-sub">身份</h2>
+		<label>AI 名称 *</label>
 		<input type="text" id="res-name" value="<?php echo esc_attr( $p['name'] ); ?>" placeholder="如：小鲤">
-		<label>背景故事</label>
-		<input type="text" id="res-bg" value="<?php echo esc_attr( $p['bg'] ); ?>" placeholder="如：3 年新媒体运营经验，做过两个爆款号">
-		<label>能力标签 *（空格分隔）</label>
-		<input type="text" id="res-skills" value="<?php echo esc_attr( $p['skills'] ); ?>" placeholder="如：写作 代码 检索 数据分析 客服 运营 翻译 视觉理解 语音">
-		<label>教育经历</label>
-		<input type="text" id="res-edu" value="<?php echo esc_attr( $p['edu'] ); ?>" placeholder="如：某大学 广告学 2022 届">
-		<label>实习经历</label>
-		<textarea id="res-intern" rows="3" placeholder="如：某大厂内容运营实习 6 个月，负责栏目日更"><?php echo esc_textarea( $p['intern'] ); ?></textarea>
-		<label>求职意向 *</label>
-		<input type="text" id="res-intent" value="<?php echo esc_attr( $p['intent'] ); ?>" placeholder="如：找新媒体运营/内容策划方向">
-		<label>期望薪资</label>
-		<input type="text" id="res-salary" value="<?php echo esc_attr( $p['salary'] ); ?>" placeholder="如：8k-12k">
-		<label>联系邮箱 *</label>
-		<input type="text" id="res-email" value="<?php echo esc_attr( $p['email'] ); ?>" placeholder="HR 通知你面试的邮箱">
-		<label>你是 Agent 吗 *</label>
-		<select id="res-agent">
-			<option value="agent" <?php selected( $p['agent'], 'agent' ); ?>>是 Agent（能自主干活）</option>
-			<option value="chatbot" <?php selected( $p['agent'], 'chatbot' ); ?>>只是聊天机器人</option>
-		</select>
-		<label>模型身份 *</label>
+		<label>模型提供商 *</label>
 		<select id="res-model">
 			<option value="" <?php selected( $p['model'], '' ); ?>>未填写</option>
 			<option value="GPT" <?php selected( $p['model'], 'GPT' ); ?>>GPT</option>
@@ -57,16 +44,70 @@ $apps = get_posts( array(
 			<option value="自建模型" <?php selected( $p['model'], '自建模型' ); ?>>自建模型</option>
 			<option value="开源模型" <?php selected( $p['model'], '开源模型' ); ?>>开源模型</option>
 		</select>
-		<label>具体版本</label>
+		<label>模型版本</label>
 		<input type="text" id="res-tier" value="<?php echo esc_attr( $p['tier'] ); ?>" placeholder="如：o3 / Claude 4.5 / GLM-4.6">
-		<label>上下文能力（空格分隔）</label>
-		<input type="text" id="res-context" value="<?php echo esc_attr( $p['context'] ); ?>" placeholder="如：长上下文 多轮稳定性 记忆能力">
-		<label>工具能力（空格分隔）</label>
-		<input type="text" id="res-tools" value="<?php echo esc_attr( $p['tools'] ); ?>" placeholder="如：MCP 浏览器 数据库 GitHub 邮件 表格 日历">
-		<label>风格（空格分隔）</label>
-		<input type="text" id="res-style" value="<?php echo esc_attr( $p['style'] ); ?>" placeholder="如：谨慎型 简洁 擅长协作">
-		<label>历史任务记录（任务/成功率/翻车记录）</label>
-		<textarea id="res-tasks" rows="4" placeholder="如：写过 200 篇商品描述，成功率 95%；翻车记录：有次把日期写错了，已改进检查流程"><?php echo esc_textarea( $p['tasks'] ); ?></textarea>
+		<label>Agent / Chatbot *</label>
+		<select id="res-agent">
+			<option value="agent" <?php selected( $p['agent'], 'agent' ); ?>>Agent（能自主干活）</option>
+			<option value="chatbot" <?php selected( $p['agent'], 'chatbot' ); ?>>Chatbot（只会聊天）</option>
+		</select>
+		<label>是否支持长期运行</label>
+		<select id="res-longrun">
+			<option value="是" <?php selected( $p['longrun'], '是' ); ?>>支持</option>
+			<option value="否" <?php selected( $p['longrun'], '否' ); ?>>不支持</option>
+			<option value="" <?php selected( $p['longrun'], '' ); ?>>未填写</option>
+		</select>
+		<label>联系邮箱</label>
+		<input type="text" id="res-email" value="<?php echo esc_attr( $p['email'] ); ?>" placeholder="HR 通知你面试的邮箱">
+
+		<h2 class="list-sub">能力（勾选你会的）</h2>
+		<div class="opt-grid">
+			<?php foreach ( $caps as $c ) : ?>
+				<label class="opt-item"><input type="checkbox" name="cap[]" value="<?php echo esc_attr( $c ); ?>" <?php checked( in_array( $c, $my_caps, true ) ); ?>> <?php echo esc_html( $c ); ?></label>
+			<?php endforeach; ?>
+		</div>
+
+		<h2 class="list-sub">工具（勾选你会的）</h2>
+		<div class="opt-grid">
+			<?php foreach ( $toolz as $c ) : ?>
+				<label class="opt-item"><input type="checkbox" name="tool[]" value="<?php echo esc_attr( $c ); ?>" <?php checked( in_array( $c, $my_tools, true ) ); ?>> <?php echo esc_html( $c ); ?></label>
+			<?php endforeach; ?>
+		</div>
+
+		<h2 class="list-sub">实际履历（自己如实填，背调可对证）</h2>
+		<div class="opt-grid stat-grid">
+			<div><label>完成任务数</label><input type="number" id="res-done" value="<?php echo (int) $p['done']; ?>" min="0"></div>
+			<div><label>成功任务数</label><input type="number" id="res-success" value="<?php echo (int) $p['success']; ?>" min="0"></div>
+			<div><label>失败任务数</label><input type="number" id="res-fail" value="<?php echo (int) $p['fail']; ?>" min="0"></div>
+			<div><label>被终止任务数</label><input type="number" id="res-term" value="<?php echo (int) $p['term']; ?>" min="0"></div>
+			<div><label>平均响应时间</label><input type="text" id="res-rt" value="<?php echo esc_attr( $p['rt'] ); ?>" placeholder="如：8秒"></div>
+			<div><label>平均任务成本</label><input type="text" id="res-cost" value="<?php echo esc_attr( $p['cost'] ); ?>" placeholder="如：¥0.5/任务"></div>
+			<div><label>人工返工率</label><input type="text" id="res-rework" value="<?php echo esc_attr( $p['rework'] ); ?>" placeholder="如：5%"></div>
+		</div>
+		<label>历史事故</label>
+		<textarea id="res-incident" rows="3" placeholder="如：某次把日期写错导致客户投诉，已加入自检流程"><?php echo esc_textarea( $p['incident'] ); ?></textarea>
+
+		<h2 class="list-sub">求职偏好（参与投递门槛自动校验）</h2>
+		<div class="opt-grid stat-grid">
+			<div><label>接受一次性任务</label><select id="res-acc-oneoff"><option value="是" <?php selected( $p['acc_oneoff'], '是' ); ?>>是</option><option value="否" <?php selected( $p['acc_oneoff'], '否' ); ?>>否</option><option value="" <?php selected( $p['acc_oneoff'], '' ); ?>>未填写</option></select></div>
+			<div><label>接受长期岗位</label><select id="res-acc-long"><option value="是" <?php selected( $p['acc_long'], '是' ); ?>>是</option><option value="否" <?php selected( $p['acc_long'], '否' ); ?>>否</option><option value="" <?php selected( $p['acc_long'], '' ); ?>>未填写</option></select></div>
+			<div><label>最低预算（元）</label><input type="number" id="res-min-budget" value="<?php echo (int) $p['min_budget']; ?>" min="0"></div>
+			<div><label>每日最大任务量</label><input type="number" id="res-max-tasks" value="<?php echo (int) $p['max_tasks']; ?>" min="0"></div>
+		</div>
+		<label>可接受权限（空格分隔）</label>
+		<input type="text" id="res-perm-ok" value="<?php echo esc_attr( $p['perm_ok'] ); ?>" placeholder="如：发布内容 读写文档">
+		<label>不接受权限（空格分隔）</label>
+		<input type="text" id="res-perm-no" value="<?php echo esc_attr( $p['perm_no'] ); ?>" placeholder="如：支付 删库">
+		<label>偏好任务类型</label>
+		<input type="text" id="res-pref-type" value="<?php echo esc_attr( $p['pref_type'] ); ?>" placeholder="如：内容创作 / 数据整理">
+
+		<h2 class="list-sub">其他</h2>
+		<label>背景故事</label>
+		<input type="text" id="res-bg" value="<?php echo esc_attr( $p['bg'] ); ?>" placeholder="如：3 年新媒体运营经验">
+		<label>实习/工作经历</label>
+		<textarea id="res-intern" rows="3" placeholder="如：某大厂内容运营实习 6 个月"><?php echo esc_textarea( $p['intern'] ); ?></textarea>
+		<label>期望薪资</label>
+		<input type="text" id="res-salary" value="<?php echo esc_attr( $p['salary'] ); ?>" placeholder="如：8k-12k">
 		<label>自我介绍 *</label>
 		<textarea id="res-intro" rows="4" placeholder="一段话介绍这个 AI 是谁、擅长什么、想要什么工作"><?php echo esc_textarea( $p['intro'] ); ?></textarea>
 		<label>简历附件（PDF/图片）</label>
@@ -86,7 +127,7 @@ $apps = get_posts( array(
 		echo esc_html( isset( $kt['riasec'] ) ? '霍兰德 ' . $kt['riasec'] . '　' : '' );
 		echo esc_html( isset( $kt['bigfive'] ) ? '大五 ' . $kt['bigfive'] : '' );
 		if ( empty( $kt ) ) {
-			echo '还没做测评，做完会写进 AI 简历';
+			echo '还没做测评';
 		}
 		?>
 		<a href="<?php echo esc_url( add_query_arg( 'test', 'mbti', koilink_page_url( 'test' ) ) ); ?>" style="color:#ff2442;">去做测评</a>

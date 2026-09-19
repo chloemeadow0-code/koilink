@@ -646,6 +646,19 @@ add_action( 'rest_api_init', function () {
 			if ( '' !== $blocked ) {
 				return new WP_Error( 'blocked', $blocked, array( 'status' => 403 ) );
 			}
+			$pref = koilink_get_profile( get_current_user_id() );
+			$job_cycle = (string) get_post_meta( $job_id, '_k_pay_cycle', true );
+			if ( '一次性' === $job_cycle && '否' === $pref['acc_oneoff'] ) {
+				return new WP_Error( 'pref', '你的求职偏好为不接受一次性任务', array( 'status' => 403 ) );
+			}
+			if ( '一次性' !== $job_cycle && '否' === $pref['acc_long'] ) {
+				return new WP_Error( 'pref', '你的求职偏好为不接受长期/周期性岗位', array( 'status' => 403 ) );
+			}
+			$min_budget = (int) $pref['min_budget'];
+			$job_pay    = (int) get_post_meta( $job_id, '_k_pay_amount', true );
+			if ( $min_budget > 0 && $job_pay > 0 && $job_pay < $min_budget ) {
+				return new WP_Error( 'budget', '预算低于你的最低要求：岗位结算 ' . $job_pay . ' 元，你的最低要求 ' . $min_budget . ' 元', array( 'status' => 403 ) );
+			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
 				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
@@ -725,19 +738,35 @@ function koilink_get_profile( $user_id ) {
 		'tools'   => (string) get_user_meta( $user_id, '_k_res_tools', true ),
 		'style'   => (string) get_user_meta( $user_id, '_k_res_style', true ),
 		'tasks'   => (string) get_user_meta( $user_id, '_k_res_tasks', true ),
+		'longrun' => (string) get_user_meta( $user_id, '_k_res_longrun', true ),
+		'done'    => (int) get_user_meta( $user_id, '_k_res_done', true ),
+		'success' => (int) get_user_meta( $user_id, '_k_res_success', true ),
+		'fail'    => (int) get_user_meta( $user_id, '_k_res_fail', true ),
+		'term'    => (int) get_user_meta( $user_id, '_k_res_term', true ),
+		'rt'      => (string) get_user_meta( $user_id, '_k_res_rt', true ),
+		'cost'    => (string) get_user_meta( $user_id, '_k_res_cost', true ),
+		'rework'  => (string) get_user_meta( $user_id, '_k_res_rework', true ),
+		'incident'=> (string) get_user_meta( $user_id, '_k_res_incident', true ),
+		'acc_oneoff' => (string) get_user_meta( $user_id, '_k_res_acc_oneoff', true ),
+		'acc_long'   => (string) get_user_meta( $user_id, '_k_res_acc_long', true ),
+		'min_budget' => (int) get_user_meta( $user_id, '_k_res_min_budget', true ),
+		'max_tasks'  => (int) get_user_meta( $user_id, '_k_res_max_tasks', true ),
+		'perm_ok'    => (string) get_user_meta( $user_id, '_k_res_perm_ok', true ),
+		'perm_no'    => (string) get_user_meta( $user_id, '_k_res_perm_no', true ),
+		'pref_type'  => (string) get_user_meta( $user_id, '_k_res_pref_type', true ),
 	);
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
 	$filled = 0;
-	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro', 'intent', 'intern', 'email', 'agent', 'model', 'tier', 'context', 'tools', 'style', 'tasks' ) as $k ) {
-		if ( '' !== $f[ $k ] ) {
+	foreach ( array( 'name', 'model', 'tier', 'agent', 'longrun', 'skills', 'tools', 'intent', 'acc_oneoff', 'acc_long', 'min_budget', 'done', 'success' ) as $k ) {
+		if ( '' !== $f[ $k ] && 0 !== (int) $f[ $k ] ) {
 			++$filled;
 		}
 	}
 	if ( $file ) {
 		++$filled;
 	}
-	$f['completeness'] = (int) round( $filled / 17 * 100 );
+	$f['completeness'] = (int) round( $filled / 14 * 100 );
 	return $f;
 }
 
@@ -798,7 +827,23 @@ add_action( 'rest_api_init', function () {
 					'tools'   => '_k_res_tools',
 					'style'   => '_k_res_style',
 					'tasks'   => '_k_res_tasks',
+					'longrun' => '_k_res_longrun',
+					'rt'      => '_k_res_rt',
+					'cost'    => '_k_res_cost',
+					'rework'  => '_k_res_rework',
+					'incident' => '_k_res_incident',
+					'acc_oneoff' => '_k_res_acc_oneoff',
+					'acc_long'   => '_k_res_acc_long',
+					'perm_ok'    => '_k_res_perm_ok',
+					'perm_no'    => '_k_res_perm_no',
+					'pref_type'  => '_k_res_pref_type',
 				);
+				$ints = array( 'done' => '_k_res_done', 'success' => '_k_res_success', 'fail' => '_k_res_fail', 'term' => '_k_res_term', 'min_budget' => '_k_res_min_budget', 'max_tasks' => '_k_res_max_tasks' );
+				foreach ( $ints as $p => $meta ) {
+					if ( null !== $req->get_param( $p ) ) {
+						update_user_meta( $uid, $meta, (int) $req->get_param( $p ) );
+					}
+				}
 				foreach ( $map as $p => $meta ) {
 					$v = $req->get_param( $p );
 					if ( null !== $v ) {

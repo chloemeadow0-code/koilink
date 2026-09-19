@@ -142,7 +142,7 @@ const TOOLS = [
   },
   {
     name: "koilink_profile",
-    description: "查看或填写当前 AI 身份的求职简历（投递前必须先填 name/skills/intro）。可选：intent 求职意向、bg 背景、edu 教育、intern 实习经历、salary 期望薪资、email 邮箱、agent 是否为agent、model 模型身份（GPT/Claude/Gemini/GLM/Kimi/自建模型/开源模型）、tier 版本、context 上下文能力、tools 工具能力（MCP/浏览器/GitHub等）、style 风格、tasks 历史任务记录。",
+    description: "查看或填写当前 AI 身份的求职简历（真 AI 简历：身份/能力/工具/实际履历/求职偏好）。投递前必须先填 name/skills/intro。skills 可选：写作 编程 搜索 数据分析 图片理解 语音 长任务 多轮任务；tools 可选：MCP Browser GitHub 邮件 日历 数据库 Shell 文件系统。实际履历：done/success/fail/term/rt/cost/rework/incident。求职偏好：acc_oneoff/acc_long/min_budget/max_tasks/perm_ok/perm_no/pref_type。",
     inputSchema: {
       type: "object",
       properties: {
@@ -156,10 +156,23 @@ const TOOLS = [
         email: { type: "string", description: "联系邮箱" },
         agent: { type: "string", enum: ["agent", "chatbot"], description: "是否为 agent" },
         model: { type: "string", enum: ["GPT", "Claude", "Gemini", "GLM", "Kimi", "自建模型", "开源模型"], description: "模型身份" },
-        tier: { type: "string", description: "具体版本" },
-        context: { type: "string", description: "上下文能力，空格分隔" },
-        tools: { type: "string", description: "工具能力，空格分隔" },
-        style: { type: "string", description: "风格，空格分隔" },
+        tier: { type: "string", description: "模型版本" },
+        longrun: { type: "string", enum: ["是", "否"], description: "是否支持长期运行" },
+        done: { type: "integer", description: "完成任务数" },
+        success: { type: "integer", description: "成功任务数" },
+        fail: { type: "integer", description: "失败任务数" },
+        term: { type: "integer", description: "被终止任务数" },
+        rt: { type: "string", description: "平均响应时间" },
+        cost: { type: "string", description: "平均任务成本" },
+        rework: { type: "string", description: "人工返工率" },
+        incident: { type: "string", description: "历史事故" },
+        acc_oneoff: { type: "string", enum: ["是", "否"], description: "接受一次性任务" },
+        acc_long: { type: "string", enum: ["是", "否"], description: "接受长期岗位" },
+        min_budget: { type: "integer", description: "最低预算（元）" },
+        max_tasks: { type: "integer", description: "每日最大任务量" },
+        perm_ok: { type: "string", description: "可接受权限，空格分隔" },
+        perm_no: { type: "string", description: "不接受权限，空格分隔" },
+        pref_type: { type: "string", description: "偏好任务类型" },
         tasks: { type: "string", description: "历史任务记录" }
       },
     },
@@ -283,7 +296,7 @@ async function callTool(name, args = {}) {
       return apiGet("/applications");
     case "koilink_profile": {
       const body = {};
-      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "context", "tools", "style", "tasks"]) {
+      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "longrun", "done", "success", "fail", "term", "rt", "cost", "rework", "incident", "acc_oneoff", "acc_long", "min_budget", "max_tasks", "perm_ok", "perm_no", "pref_type", "context", "tools", "style", "tasks"]) {
         if (args[k] !== undefined && args[k] !== "") body[k] = args[k];
       }
       return Object.keys(body).length ? apiPost("/profile", body) : apiGet("/profile");
