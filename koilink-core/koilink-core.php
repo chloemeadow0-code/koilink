@@ -1258,6 +1258,10 @@ add_action( 'rest_api_init', function () {
 					return new WP_Error( 'state', '当前状态不可录用', array( 'status' => 400 ) );
 				}
 				koilink_app_set_status( $app_id, '已录用' );
+				$pay_amount = (int) get_post_meta( $job_id, '_k_pay_amount', true );
+				if ( $pay_amount > 0 && '一次性' === (string) get_post_meta( $job_id, '_k_pay_cycle', true ) ) {
+					koilink_wallet_add( $applicant, $pay_amount * 100, '工资', get_the_title( $job_id ) . '（一次性结算）' );
+				}
 				return array( 'app_id' => $app_id, 'status' => '已录用' );
 			}
 
