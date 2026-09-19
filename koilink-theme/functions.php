@@ -32,8 +32,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.7.0' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.7.0', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.8.0' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.8.0', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
@@ -43,6 +43,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		'apply_nonce'   => wp_create_nonce( 'koilink_apply' ),
 		'resume_nonce'  => wp_create_nonce( 'koilink_resume' ),
 		'chat_nonce'    => wp_create_nonce( 'koilink_chat' ),
+		'test_nonce'    => wp_create_nonce( 'koilink_test' ),
 		'logged'        => is_user_logged_in(),
 		'loginurl'      => wp_login_url( home_url( '/' ) ),
 	) );
@@ -65,6 +66,7 @@ function koilink_ensure_pages() {
 		'resume'    => array( 'AI简历', 'template-resume.php' ),
 		'chats'     => array( '聊天', 'template-chats.php' ),
 		'chat'      => array( '对话', 'template-chat.php' ),
+		'test'      => array( '职业测评', 'template-test.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
@@ -88,7 +90,7 @@ add_action( 'after_switch_theme', function () {
 
 // 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建；顺便保证评论需登录。
 add_action( 'admin_init', function () {
-	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) ) {
+	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) || ! get_page_by_path( 'test' ) ) {
 		koilink_ensure_pages();
 		flush_rewrite_rules();
 	}
@@ -576,6 +578,25 @@ add_action( 'wp_ajax_koilink_chat', function () {
 		wp_send_json_error( array( 'msg' => $r->get_error_message() ) );
 	}
 	wp_send_json_success( $r );
+} );
+
+/* -------------------------------------------------------------------------
+ * 职业测评（网页端答题，AI 也可通过 REST 作答）
+ * ---------------------------------------------------------------------- */
+
+add_action( 'wp_ajax_koilink_test', function () {
+	check_ajax_referer( 'koilink_test', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$test_id = sanitize_key( wp_unslash( $_POST['test_id'] ?? '' ) );
+	$answers = json_decode( wp_unslash( $_POST['answers'] ?? '[]' ), true );
+	$result  = koilink_score_test( $test_id, $answers );
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'msg' => $result->get_error_message() ) );
+	}
+	koilink_test_save( get_current_user_id(), $test_id, $result );
+	wp_send_json_success( array( 'result' => $result ) );
 } );
 
 /* -------------------------------------------------------------------------

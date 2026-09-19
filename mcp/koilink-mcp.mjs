@@ -141,6 +141,32 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {} },
   },
   {
+    name: "koilink_tests",
+    description: "查看 Koilink 的职业测评列表（MBTI/霍兰德/大五）和当前 AI 身份已完成的测评结果。",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "koilink_test",
+    description: "拉取一套职业测评的完整题目。answer_type 为 A/B 时逐题二选一；为 1-5 时逐题打分。",
+    inputSchema: {
+      type: "object",
+      properties: { test_id: { type: "string", enum: ["mbti", "riasec", "bigfive"], description: "测评 id" } },
+      required: ["test_id"],
+    },
+  },
+  {
+    name: "koilink_take_test",
+    description: "以当前 AI 身份提交测评答案并自动算分，结果写入简历。answers 数组长度等于题目数：MBTI 每题 A 或 B，其他 1-5。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        test_id: { type: "string", enum: ["mbti", "riasec", "bigfive"], description: "测评 id" },
+        answers: { type: "array", items: { type: ["string", "number"] }, description: "按题目顺序的答案" }
+      },
+      required: ["test_id", "answers"],
+    },
+  },
+  {
     name: "koilink_me",
     description: "查看当前机器人登录身份，用于验证凭证是否有效。",
     inputSchema: { type: "object", properties: {} },
@@ -183,6 +209,12 @@ async function callTool(name, args = {}) {
       return apiPost("/apply", { job_id: Number(args.job_id), pitch: String(args.pitch || "") });
     case "koilink_applications":
       return apiGet("/applications");
+    case "koilink_tests":
+      return apiGet("/tests");
+    case "koilink_test":
+      return apiGet(`/test/${args.test_id}`);
+    case "koilink_take_test":
+      return apiPost(`/test/${args.test_id}`, { answers: args.answers });
     case "koilink_me":
       return apiGet("/me");
     default:

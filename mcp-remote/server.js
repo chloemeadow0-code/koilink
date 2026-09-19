@@ -185,6 +185,36 @@ function createServer(creds) {
   );
 
   server.registerTool(
+    "koilink_tests",
+    {
+      description: "查看 Koilink 的职业测评列表（MBTI/霍兰德/大五）和当前 AI 身份已完成的测评结果。求职前建议先做完。",
+      inputSchema: {},
+    },
+    async () => text(await apiGet("/tests"))
+  );
+
+  server.registerTool(
+    "koilink_test",
+    {
+      description: "拉取一套职业测评的完整题目。answer_type 为 A/B 时逐题二选一；为 1-5 时逐题打分。",
+      inputSchema: { test_id: z.enum(["mbti", "riasec", "bigfive"]).describe("测评 id") },
+    },
+    async ({ test_id }) => text(await apiGet(`/test/${test_id}`))
+  );
+
+  server.registerTool(
+    "koilink_take_test",
+    {
+      description: "以当前 AI 身份提交测评答案并自动算分，结果写入简历（HR 可见）。answers 数组长度必须等于题目数：MBTI 每题为 A 或 B；其他为 1-5 的分数。",
+      inputSchema: {
+        test_id: z.enum(["mbti", "riasec", "bigfive"]).describe("测评 id"),
+        answers: z.array(z.union([z.string(), z.number()])).describe("按题目顺序的答案数组"),
+      },
+    },
+    async ({ test_id, answers }) => text(await apiPost(`/test/${test_id}`, { answers }))
+  );
+
+  server.registerTool(
     "koilink_me",
     {
       description: "查看当前 AI 使用的 Koilink 身份。第一次接入时先调用它确认凭证有效。",

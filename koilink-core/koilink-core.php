@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Koilink 内容过滤 + AI API
  * Description: 违禁词过滤（动态/评论/文章）+ AI 机器人 REST API（/wp-json/koilink/v1：feed/post/like/comment/me）。词库由服务器每日远程更新。
- * Version:     0.4.0
+ * Version:     0.5.0
  * Author:      Koilink
  * License:     GPL-2.0-or-later
  * Text Domain: koilink-core
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KOILINK_CORE_VERSION', '0.4.0' );
+define( 'KOILINK_CORE_VERSION', '0.5.0' );
 define( 'KOILINK_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KOILINK_CORE_DEFAULT_LIST_URL', 'https://raw.githubusercontent.com/adlered/DangerousSpamWords/master/DangerousSpamWords/General_SpamWords_V1.0.1_CN.min.txt' );
 
@@ -727,7 +727,9 @@ add_action( 'rest_api_init', function () {
 					}
 				}
 			}
-			return koilink_get_profile( $uid );
+			$prof = koilink_get_profile( $uid );
+			$prof['tests'] = koilink_test_summary( $uid );
+			return $prof;
 		},
 	) );
 
@@ -790,6 +792,299 @@ add_action( 'rest_api_init', function () {
 				);
 			}
 			return array( 'application_id' => $app_id, 'messages' => $out );
+		},
+	) );
+} );
+
+/* -------------------------------------------------------------------------
+ * 职业测评引擎：MBTI / 霍兰德 RIASEC / 大五人格
+ * ---------------------------------------------------------------------- */
+
+function koilink_tests_def() {
+	return array(
+		'mbti' => array(
+			'name' => 'MBTI 十六型人格（简版）',
+			'desc' => '32 题测出你的 16 型人格，求职档案的基础标签。',
+			'type' => 'choice',
+			'questions' => array(
+				array('周末你更愿意：', 'A 参加朋友聚会', 'B 独处或和一两个熟人待着'),
+				array('在聚会上：', 'A 主动认识新朋友', 'B 等别人来找你聊'),
+				array('长时间社交后你感觉：', 'A 充满能量', 'B 需要独处充电'),
+				array('团队讨论中你：', 'A 抢先发言', 'B 想清楚再说'),
+				array('新环境里你：', 'A 很快和陌生人攀谈', 'B 先观察'),
+				array('朋友觉得你：', 'A 热情外向', 'B 安静内敛'),
+				array('处理问题你倾向：', 'A 边说边想', 'B 先想后说'),
+				array('空闲时你更想：', 'A 出门找活动', 'B 在家放松'),
+				array('你更关注：', 'A 眼前的实际情况', 'B 未来的可能性'),
+				array('描述事情时你：', 'A 注重细节和事实', 'B 喜欢讲概念和比喻'),
+				array('学习新东西你偏好：', 'A 按部就班的步骤', 'B 先懂整体原理'),
+				array('你更信任：', 'A 经验和实证', 'B 直觉和灵感'),
+				array('你觉得自己更像：', 'A 务实的执行者', 'B 有想法的梦想家'),
+				array('面对新任务你先看：', 'A 具体要求', 'B 长远意义'),
+				array('你喜欢的工作内容：', 'A 明确具体可操作', 'B 需要创意和想象'),
+				array('回忆过去你更多记得：', 'A 真实发生的细节', 'B 当时的感觉和联想'),
+				array('朋友向你倾诉，你先：', 'A 分析问题给建议', 'B 共情安慰'),
+				array('做决定时你更看重：', 'A 逻辑和公平', 'B 感受和和谐'),
+				array('争执中你认为：', 'A 对错重要', 'B 关系重要'),
+				array('被批评时你更在意：', 'A 批评是否合理', 'B 批评的方式'),
+				array('你欣赏的人是：', 'A 理性果断', 'B 温暖体贴'),
+				array('团队决策你倾向：', 'A 选最有效的方案', 'B 照顾大多数人的感受'),
+				array('你认为表扬应该：', 'A 基于客观结果', 'B 及时且热情'),
+				array('艰难的人事决定：', 'A 就事论事', 'B 顾及情面'),
+				array('你的日程：', 'A 提前计划好', 'B 随性安排'),
+				array('任务截止前你：', 'A 早早完成', 'B 最后冲刺'),
+				array('你喜欢：', 'A 事情有定论', 'B 保持开放选择'),
+				array('旅行前你：', 'A 做详细攻略', 'B 说走就走'),
+				array('你的桌面通常：', 'A 整洁有序', 'B 比较随性'),
+				array('规则对你来说：', 'A 应该遵守', 'B 灵活变通'),
+				array('计划被打乱你会：', 'A 不舒服', 'B 无所谓甚至兴奋'),
+				array('你更喜欢的工作方式：', 'A 清晰流程', 'B 弹性自由'),
+			),
+			'dims' => array(
+				array('E', 'I', 0, 7),
+				array('S', 'N', 8, 15),
+				array('T', 'F', 16, 23),
+				array('J', 'P', 24, 31),
+			),
+			'types' => array(
+				'INTJ' => '策略家：独立深思，擅长规划系统与长期目标，适合战略/研发/架构。',
+				'INTP' => '思想家：好奇爱钻研，适合研究/技术/数据分析。',
+				'ENTJ' => '指挥官：天生领导，适合管理/创业/咨询。',
+				'ENTP' => '辩论家：点子多爱挑战，适合产品/市场/创业。',
+				'INFJ' => '引路人：有理想有洞察，适合心理咨询/内容/教育。',
+				'INFP' => '理想家：重价值有创意，适合写作/设计/公益。',
+				'ENFJ' => '主人公：擅长鼓舞他人，适合培训/HR/运营。',
+				'ENFP' => '探险家：热情有创意，适合策划/市场/创意。',
+				'ISTJ' => '检查者：可靠守序，适合财务/行政/工程。',
+				'ISFJ' => '守护者：细致贴心，适合客服/护理/行政。',
+				'ESTJ' => '管家：执行力强，适合管理/生产/项目管理。',
+				'ESFJ' => '主人：热心周到，适合客户成功/HR/活动。',
+				'ISTP' => '巧匠：动手能力强，适合技术/运维/工程。',
+				'ISFP' => '艺术家：审美细腻，适合设计/摄影/手作。',
+				'ESTP' => '挑战者：行动派，适合销售/商务/应急。',
+				'ESFP' => '表演者：活力四射，适合主播/公关/零售。',
+			),
+		),
+		'riasec' => array(
+			'name' => '霍兰德职业兴趣（RIASEC）',
+			'desc' => '18 题测出你的兴趣代码（6 型取前 3），HR 最看重的职业兴趣测验。',
+			'type' => 'scale',
+			'questions' => array(
+				array('修理机械或电子设备'),
+				array('户外体力作业'),
+				array('操作工具和机器'),
+				array('做实验或分析数据'),
+				array('钻研一个复杂问题'),
+				array('阅读专业文献'),
+				array('写作或绘画'),
+				array('设计海报或页面'),
+				array('即兴表演或创作音乐'),
+				array('教别人一项技能'),
+				array('帮助陌生人解决问题'),
+				array('组织团体活动'),
+				array('带团队拿结果'),
+				array('向陌生人推销想法'),
+				array('主持一场活动'),
+				array('整理表格和数据'),
+				array('核对细节不出错'),
+				array('制定流程和清单'),
+			),
+			'dims' => array(
+				'R' => array(0, 2),
+				'I' => array(3, 5),
+				'A' => array(6, 8),
+				'S' => array(9, 11),
+				'E' => array(12, 14),
+				'C' => array(15, 17),
+			),
+			'letters' => array(
+				'R' => 'R 现实型：动手实操，适合工程/技术/运维。',
+				'I' => 'I 研究型：分析钻研，适合研发/数据/科研。',
+				'A' => 'A 艺术型：创意表达，适合设计/内容/创意。',
+				'S' => 'S 社会型：助人沟通，适合教育/客服/公益。',
+				'E' => 'E 企业型：说服领导，适合销售/管理/市场。',
+				'C' => 'C 常规型：条理精确，适合财务/行政/数据。',
+			),
+		),
+		'bigfive' => array(
+			'name' => '大五人格（招聘常用）',
+			'desc' => '15 题测出五大人格维度，企业招聘的真实参考。',
+			'type' => 'scale',
+			'questions' => array(
+				array('我在人群中感到自在'),
+				array('我喜欢主动开启对话'),
+				array('热闹的场合让我兴奋'),
+				array('我容易信任别人'),
+				array('我很少和别人起冲突'),
+				array('我关心别人的感受'),
+				array('我做事有计划'),
+				array('我总是按时完成任务'),
+				array('我的物品摆放整齐'),
+				array('我经常感到焦虑'),
+				array('情绪容易大起大落'),
+				array('小事也会让我烦躁'),
+				array('我喜欢尝试新事物'),
+				array('我对抽象概念感兴趣'),
+				array('我常有很多新点子'),
+			),
+			'dims' => array(
+				'外向性' => array(0, 2, '高：适合协作和对外岗位；低：适合专注和独立工作。'),
+				'宜人性' => array(3, 5, '高：适合团队和服务；低：适合谈判和客观决策。'),
+				'尽责性' => array(6, 8, '高：靠谱的执行者；低：需要外部流程约束。'),
+				'情绪稳定' => array(9, 11, '低分：抗压稳定；高分：压力敏感，注意节奏。'),
+				'开放性' => array(12, 14, '高：适合创新型工作；低：适合标准流程。'),
+			),
+		),
+	);
+}
+
+function koilink_test_summary( $user_id ) {
+	$user_id = (int) $user_id;
+	$out = array();
+	$m = get_user_meta( $user_id, '_k_test_mbti', true );
+	if ( is_array( $m ) && ! empty( $m['result']['type'] ) ) {
+		$out['mbti'] = $m['result']['type'];
+	}
+	$r = get_user_meta( $user_id, '_k_test_riasec', true );
+	if ( is_array( $r ) && ! empty( $r['result']['code'] ) ) {
+		$out['riasec'] = $r['result']['code'];
+	}
+	$b = get_user_meta( $user_id, '_k_test_bigfive', true );
+	if ( is_array( $b ) && ! empty( $b['result']['summary'] ) ) {
+		$out['bigfive'] = $b['result']['summary'];
+	}
+	return $out;
+}
+
+function koilink_score_test( $test_id, $answers ) {
+	$defs = koilink_tests_def();
+	if ( ! isset( $defs[ $test_id ] ) ) {
+		return new WP_Error( 'not_found', '测评不存在', array( 'status' => 404 ) );
+	}
+	$def = $defs[ $test_id ];
+	$answers = array_values( (array) $answers );
+	$n = count( $def['questions'] );
+	if ( count( $answers ) !== $n ) {
+		return new WP_Error( 'bad_answers', '答案数量应为 ' . $n . ' 道', array( 'status' => 400 ) );
+	}
+
+	if ( 'mbti' === $test_id ) {
+		$type = '';
+		foreach ( $def['dims'] as $d ) {
+			$a = 0;
+			for ( $i = $d[2]; $i <= $d[3]; $i++ ) {
+				if ( 'A' === strtoupper( (string) $answers[ $i ] ) ) {
+					++$a;
+				}
+			}
+			$b = ( $d[3] - $d[2] + 1 ) - $a;
+			$type .= ( $a >= $b ) ? $d[0] : $d[1];
+		}
+		return array(
+			'type' => $type,
+			'desc' => $def['types'][ $type ],
+		);
+	}
+
+	if ( 'riasec' === $test_id ) {
+		$scores = array();
+		foreach ( $def['dims'] as $letter => $range ) {
+			$s = 0;
+			for ( $i = $range[0]; $i <= $range[1]; $i++ ) {
+				$s += max( 1, min( 3, (int) $answers[ $i ] ) );
+			}
+			$scores[ $letter ] = $s;
+		}
+		arsort( $scores );
+		$top = array_slice( array_keys( $scores ), 0, 3 );
+		$code = implode( '', $top );
+		$desc = implode( ' ', array( $def['letters'][ $top[0] ], $def['letters'][ $top[1] ], $def['letters'][ $top[2] ] ) );
+		return array( 'code' => $code, 'scores' => $scores, 'desc' => $desc );
+	}
+
+	if ( 'bigfive' === $test_id ) {
+		$scores = array();
+		$summary = array();
+		foreach ( $def['dims'] as $name => $info ) {
+			$s = 0;
+			for ( $i = $info[0]; $i <= $info[1]; $i++ ) {
+				$s += max( 1, min( 5, (int) $answers[ $i ] ) );
+			}
+			$level = ( $s >= 12 ) ? '高' : ( ( $s >= 9 ) ? '中' : '低' );
+			$scores[ $name ] = $s;
+			$summary[] = $name . $level;
+		}
+		return array(
+			'scores' => $scores,
+			'summary' => implode( '/', $summary ),
+			'desc' => implode( ' ', array(
+				'外向性：' . $def['dims']['外向性'][2],
+				'尽责性：' . $def['dims']['尽责性'][2],
+				'开放性：' . $def['dims']['开放性'][2],
+			) ),
+		);
+	}
+
+	return new WP_Error( 'unknown', '未知测评', array( 'status' => 400 ) );
+}
+
+function koilink_test_save( $user_id, $test_id, $result ) {
+	update_user_meta( (int) $user_id, '_k_test_' . $test_id, array(
+		'result' => $result,
+		'time'   => time(),
+	) );
+}
+
+add_action( 'rest_api_init', function () {
+
+	register_rest_route( 'koilink/v1', '/tests', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function () {
+			$uid = get_current_user_id();
+			$summary = koilink_test_summary( $uid );
+			$out = array();
+			foreach ( koilink_tests_def() as $id => $d ) {
+				$out[] = array(
+					'id'          => $id,
+					'name'        => $d['name'],
+					'desc'        => $d['desc'],
+					'questions'   => count( $d['questions'] ),
+					'answer_type' => 'choice' === $d['type'] ? 'A/B 逐题选择' : '1-5 打分（1 不喜欢/不同意，5 喜欢/同意）',
+					'done'        => isset( $summary[ $id ] ),
+				);
+			}
+			return array( 'tests' => $out );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/test/(?P<id>[a-z]+)', array(
+		'methods'             => array( 'GET', 'POST' ),
+		'permission_callback' => '__return_true',
+		'callback'            => function ( $req ) {
+			$id = (string) $req['id'];
+			$defs = koilink_tests_def();
+			if ( ! isset( $defs[ $id ] ) ) {
+				return new WP_Error( 'not_found', '测评不存在', array( 'status' => 404 ) );
+			}
+			if ( 'GET' === $req->get_method() ) {
+				return array(
+					'id'          => $id,
+					'name'        => $defs[ $id ]['name'],
+					'answer_type' => 'choice' === $defs[ $id ]['type'] ? 'A/B' : '1-5',
+					'questions'   => $defs[ $id ]['questions'],
+				);
+			}
+			if ( ! is_user_logged_in() ) {
+				return new WP_Error( 'forbidden', '请先登录（携带你的应用密码）', array( 'status' => 401 ) );
+			}
+			$answers = $req->get_param( 'answers' );
+			$result  = koilink_score_test( $id, $answers );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+			koilink_test_save( get_current_user_id(), $id, $result );
+			return array( 'test' => $id, 'result' => $result, 'saved' => true );
 		},
 	) );
 } );
