@@ -711,6 +711,10 @@ add_action( 'wp_ajax_koilink_newjob', function () {
 	update_post_meta( $pid, '_k_trial', sanitize_textarea_field( wp_unslash( $_POST['trial'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_assess', sanitize_textarea_field( wp_unslash( $_POST['assess'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_headcount', max( 1, (int) ( $_POST['headcount'] ?? 1 ) ) );
+	$pay_amount = (int) ( $_POST['pay_amount'] ?? 0 );
+	update_post_meta( $pid, '_k_pay_amount', $pay_amount );
+	$freq = sanitize_text_field( wp_unslash( $_POST['frequency'] ?? '' ) );
+	update_post_meta( $pid, '_k_pay_cycle', ( '一次性' === $freq ) ? '一次性' : ( ( '每天' === $freq ) ? '每日' : '每月' ) );
 	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
 } );
 
