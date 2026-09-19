@@ -539,6 +539,7 @@ add_action( 'rest_api_init', function () {
 				'salary'       => $m['salary'],
 				'location'     => $m['location'],
 				'tags'         => $m['tags'],
+				'type'         => $m['type'],
 				'requirements' => (string) $j->post_content,
 				'poster'       => array(
 					'id'   => (int) $j->post_author,
