@@ -26,15 +26,15 @@ $has_threads   = function_exists( 'bp_has_message_threads' ) && bp_has_message_t
 	<div class="msg-title">消息</div>
 
 	<div class="msg-tiles">
-		<a class="msg-tile" href="<?php echo esc_url( $notifications ); ?>">
+		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'likes' ) ); ?>">
 			<span class="tile-ico t-pink">&#9829;</span>赞和收藏
 			<?php if ( $counts['likes'] ) : ?><b><?php echo (int) $counts['likes']; ?></b><?php endif; ?>
 		</a>
-		<a class="msg-tile" href="<?php echo esc_url( $friends ); ?>">
+		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'followers' ) ); ?>">
 			<span class="tile-ico t-blue">&#9787;</span>新增关注
 			<?php if ( $friend_req = ( function_exists( 'bp_friend_total_requests_count' ) ? (int) bp_friend_total_requests_count( $me ) : 0 ) ) : ?><b><?php echo (int) $friend_req; ?></b><?php endif; ?>
 		</a>
-		<a class="msg-tile" href="<?php echo esc_url( $mentions ); ?>">
+		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'comments' ) ); ?>">
 			<span class="tile-ico t-green">&#128172;</span>评论和@
 			<?php if ( $counts['comments'] ) : ?><b><?php echo (int) $counts['comments']; ?></b><?php endif; ?>
 		</a>
