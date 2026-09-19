@@ -30,7 +30,11 @@ if ( function_exists( 'bp_core_get_user_domain' ) ) {
 ?>
 <div class="content-page">
 	<div class="me-head">
-		<?php echo get_avatar( $me, 112 ); ?>
+		<label class="me-avatar-wrap" title="点击更换头像">
+			<?php echo koilink_avatar_html( $me, 112 ); ?>
+			<input type="file" id="me-avatar-input" accept="image/*" hidden>
+			<span class="me-avatar-hint">更换</span>
+		</label>
 		<div>
 			<b><?php echo esc_html( wp_get_current_user()->display_name ); ?></b>
 			<div class="me-links">

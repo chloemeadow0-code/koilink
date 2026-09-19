@@ -16,6 +16,13 @@ echo "==> 安装主题 koilink-theme..."
 rm -rf /var/www/html/wp-content/themes/koilink-theme
 cp -r koilink-main/koilink-theme /var/www/html/wp-content/themes/
 
+echo "==> 解码应用图标..."
+cd /var/www/html/wp-content/themes/koilink-theme
+base64 -d icon-512.png.b64 > icon-512.png
+base64 -d icon-192.png.b64 > icon-192.png
+base64 -d apple-touch-icon.png.b64 > apple-touch-icon.png
+cd /tmp
+
 echo "==> 同步插件 koilink-core..."
 rm -rf /var/www/html/wp-content/plugins/koilink-core
 cp -r koilink-main/koilink-core /var/www/html/wp-content/plugins/
