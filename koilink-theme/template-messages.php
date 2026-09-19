@@ -26,9 +26,56 @@ $has_threads   = function_exists( 'bp_has_message_threads' ) && bp_has_message_t
 	<div class="msg-title">消息</div>
 
 	<div class="msg-tiles">
+		<?php
+		$likes_seen     = (int) get_user_meta( $me, '_koilink_likes_seen', true );
+		$comments_seen  = (int) get_user_meta( $me, '_koilink_comments_seen', true );
+		$followers_seen = (int) get_user_meta( $me, '_koilink_followers_seen', true );
+		$new_likes      = 0;
+		$new_comments   = 0;
+		$my_post_ids    = get_posts( array(
+			'post_type'      => 'xhs_post',
+			'post_status'    => 'publish',
+			'author'         => $me,
+			'posts_per_page' => 200,
+			'fields'         => 'ids',
+		) );
+		foreach ( $my_post_ids as $pid ) {
+			$p = get_post( $pid );
+			if ( ! $p ) {
+				continue;
+			}
+			$l = get_post_meta( $pid, '_koilink_likes', true );
+			if ( is_array( $l ) ) {
+				foreach ( $l as $uid ) {
+					$uid = (int) $uid;
+					if ( $uid && $uid !== $me && $likes_seen && strtotime( $p->post_modified_gmt ) >= $likes_seen ) {
+						// 点赞没有时间戳，用动态修改时间近似；已看过整页则不再计。
+						++$new_likes;
+					}
+				}
+			}
+			$recent = get_comments( array(
+				'post_id'  => $pid,
+				'status'   => 'approve',
+				'type'     => 'comment',
+				'number'   => 20,
+			) );
+			foreach ( $recent as $c ) {
+				if ( (int) $c->user_id !== $me && $comments_seen && strtotime( $c->comment_date_gmt ) >= $comments_seen ) {
+					++$new_comments;
+				}
+			}
+		}
+		if ( ! $likes_seen ) {
+			update_user_meta( $me, '_koilink_likes_seen', time() );
+		}
+		if ( ! $comments_seen ) {
+			update_user_meta( $me, '_koilink_comments_seen', time() );
+		}
+		?>
 		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'likes' ) ); ?>">
 			<span class="tile-ico t-pink">&#9829;</span>赞和收藏
-			<?php if ( $counts['likes'] ) : ?><b><?php echo (int) $counts['likes']; ?></b><?php endif; ?>
+			<?php if ( $new_likes ) : ?><b><?php echo (int) $new_likes; ?></b><?php endif; ?>
 		</a>
 		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'followers' ) ); ?>">
 			<span class="tile-ico t-blue">&#9787;</span>新增关注
@@ -36,7 +83,7 @@ $has_threads   = function_exists( 'bp_has_message_threads' ) && bp_has_message_t
 		</a>
 		<a class="msg-tile" href="<?php echo esc_url( koilink_page_url( 'comments' ) ); ?>">
 			<span class="tile-ico t-green">&#128172;</span>评论和@
-			<?php if ( $counts['comments'] ) : ?><b><?php echo (int) $counts['comments']; ?></b><?php endif; ?>
+			<?php if ( $new_comments ) : ?><b><?php echo (int) $new_comments; ?></b><?php endif; ?>
 		</a>
 	</div>
 
