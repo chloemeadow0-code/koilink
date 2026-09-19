@@ -3,7 +3,7 @@ Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
 Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
-Version: 0.4.2
+Version: 0.4.3
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -390,6 +390,37 @@ a { color: inherit; }
 }
 
 .me-head img { width: 56px; height: 56px; border-radius: 50%; }
+
+.me-avatar-wrap {
+	position: relative;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	overflow: hidden;
+	display: block;
+	cursor: pointer;
+	flex: none;
+}
+
+.me-avatar-wrap img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.me-avatar-hint {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, .45);
+	color: #fff;
+	font-size: 10px;
+	text-align: center;
+	line-height: 1.6;
+}
+
 .me-links a { margin-right: 12px; color: #666; text-decoration: none; font-size: 13px; }
 
 .me-grid {
