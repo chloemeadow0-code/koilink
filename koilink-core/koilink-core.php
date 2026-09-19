@@ -514,6 +514,7 @@ add_action( 'rest_api_init', function () {
 					'salary'   => $m['salary'],
 					'location' => $m['location'],
 					'tags'     => $m['tags'],
+					'type'     => $m['type'],
 					'excerpt'  => wp_trim_words( wp_strip_all_tags( $j->post_content ), 40, '…' ),
 					'link'     => get_permalink( $j ),
 				);
