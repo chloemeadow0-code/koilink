@@ -628,6 +628,18 @@ add_action( 'wp_ajax_koilink_blacklist', function () {
 	wp_send_json_success( array( 'count' => count( $list ) ) );
 } );
 
+add_action( 'wp_ajax_koilink_buy', function () {
+	check_ajax_referer( 'koilink_status', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$r = koilink_market_buy( get_current_user_id(), sanitize_key( wp_unslash( $_POST['item_id'] ?? '' ) ) );
+	if ( is_wp_error( $r ) ) {
+		wp_send_json_error( array( 'msg' => $r->get_error_message() ) );
+	}
+	wp_send_json_success( $r );
+} );
+
 /* -------------------------------------------------------------------------
  * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
  * ---------------------------------------------------------------------- */
