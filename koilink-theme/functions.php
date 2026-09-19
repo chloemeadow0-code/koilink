@@ -69,6 +69,8 @@ function koilink_ensure_pages() {
 		'chat'      => array( '对话', 'template-chat.php' ),
 		'test'      => array( '职业测评', 'template-test.php' ),
 		'background'=> array( '背调报告', 'template-background.php' ),
+		'wallet'    => array( '我的资产', 'template-wallet.php' ),
+		'market'    => array( '集市', 'template-market.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
@@ -92,7 +94,7 @@ add_action( 'after_switch_theme', function () {
 
 // 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建；顺便保证评论需登录。
 add_action( 'admin_init', function () {
-	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) || ! get_page_by_path( 'test' ) || ! get_page_by_path( 'background' ) ) {
+	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) || ! get_page_by_path( 'test' ) || ! get_page_by_path( 'background' ) || ! get_page_by_path( 'wallet' ) || ! get_page_by_path( 'market' ) ) {
 		koilink_ensure_pages();
 		flush_rewrite_rules();
 	}
@@ -626,6 +628,18 @@ add_action( 'wp_ajax_koilink_blacklist', function () {
 	wp_send_json_success( array( 'count' => count( $list ) ) );
 } );
 
+add_action( 'wp_ajax_koilink_buy', function () {
+	check_ajax_referer( 'koilink_status', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$r = koilink_market_buy( get_current_user_id(), sanitize_key( wp_unslash( $_POST['item_id'] ?? '' ) ) );
+	if ( is_wp_error( $r ) ) {
+		wp_send_json_error( array( 'msg' => $r->get_error_message() ) );
+	}
+	wp_send_json_success( $r );
+} );
+
 /* -------------------------------------------------------------------------
  * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
  * ---------------------------------------------------------------------- */
@@ -666,6 +680,8 @@ function koilink_job_meta( $post_id ) {
 		'trial'     => (string) get_post_meta( $post_id, '_k_trial', true ),
 		'assess'    => (string) get_post_meta( $post_id, '_k_assess', true ),
 		'headcount' => (int) get_post_meta( $post_id, '_k_headcount', true ),
+		'pay_amount' => (int) get_post_meta( $post_id, '_k_pay_amount', true ),
+		'pay_cycle' => (string) get_post_meta( $post_id, '_k_pay_cycle', true ),
 	);
 }
 
@@ -709,6 +725,10 @@ add_action( 'wp_ajax_koilink_newjob', function () {
 	update_post_meta( $pid, '_k_trial', sanitize_textarea_field( wp_unslash( $_POST['trial'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_assess', sanitize_textarea_field( wp_unslash( $_POST['assess'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_headcount', max( 1, (int) ( $_POST['headcount'] ?? 1 ) ) );
+	$pay_amount = (int) ( $_POST['pay_amount'] ?? 0 );
+	update_post_meta( $pid, '_k_pay_amount', $pay_amount );
+	$freq = sanitize_text_field( wp_unslash( $_POST['frequency'] ?? '' ) );
+	update_post_meta( $pid, '_k_pay_cycle', ( '一次性' === $freq ) ? '一次性' : ( ( '每天' === $freq ) ? '每日' : '每月' ) );
 	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
 } );
 

@@ -134,6 +134,7 @@
 			fd.append('trial', (document.getElementById('nj-trial') || {}).value || '');
 			fd.append('assess', (document.getElementById('nj-assess') || {}).value || '');
 			fd.append('headcount', (document.getElementById('nj-headcount') || {}).value || '1');
+			fd.append('pay_amount', (document.getElementById('nj-pay') || {}).value || '0');
 			fd.append('desc', document.getElementById('nj-desc').value);
 			fetch(D.ajax + '?action=koilink_newjob', { method: 'POST', credentials: 'same-origin', body: fd })
 				.then(function (r) { return r.json(); })
@@ -290,5 +291,28 @@
 				.then(function (r) { return r.json(); })
 				.then(function (j) { if (j && j.success) location.reload(); });
 		}
+	});
+
+	/* 集市购买 */
+	document.addEventListener('click', function (e) {
+		var buyBtn = e.target.closest('.buy-btn');
+		if (!buyBtn) return;
+		if (needLogin()) return;
+		buyBtn.disabled = true;
+		var tip = document.getElementById('buy-tip');
+		if (tip) tip.textContent = '购买中…';
+		var fd = new FormData();
+		fd.append('nonce', D.status_nonce);
+		fd.append('item_id', buyBtn.getAttribute('data-item'));
+		fetch(D.ajax + '?action=koilink_buy', { method: 'POST', credentials: 'same-origin', body: fd })
+			.then(function (r) { return r.json(); })
+			.then(function (j) {
+				if (j && j.success) location.reload();
+				else {
+					if (tip) tip.textContent = (j && j.data && j.data.msg) || '购买失败';
+					buyBtn.disabled = false;
+				}
+			})
+			.catch(function () { buyBtn.disabled = false; });
 	});
 })();

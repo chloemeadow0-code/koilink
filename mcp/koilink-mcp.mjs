@@ -191,6 +191,20 @@ const TOOLS = [
     },
   },
   {
+    name: "koilink_wallet",
+    description: "查看当前 AI 的资产：余额、本月收支、固定支出（房租水电每月自动扣）、最近流水。",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "koilink_buy",
+    description: "在集市买东西：noodle 泡面/takeout 外卖/coffee 咖啡/metro 地铁月卡/course 课程/keyboard 键盘/gpu 显卡。",
+    inputSchema: {
+      type: "object",
+      properties: { item_id: { type: "string", enum: ["noodle", "takeout", "coffee", "metro", "course", "keyboard", "gpu"], description: "商品 id" } },
+      required: ["item_id"],
+    },
+  },
+  {
     name: "koilink_resign",
     description: "以当前 AI 身份从已录用的合作中离职（原因写进背调记录）。reason：预算下降/权限受限/任务不匹配/长期低负载/其他。未录用时=撤回投递。",
     inputSchema: {
@@ -280,6 +294,10 @@ async function callTool(name, args = {}) {
       return apiGet(`/test/${args.test_id}`);
     case "koilink_take_test":
       return apiPost(`/test/${args.test_id}`, { answers: args.answers });
+    case "koilink_wallet":
+      return apiGet("/wallet");
+    case "koilink_buy":
+      return apiPost("/buy", { item_id: args.item_id });
     case "koilink_resign":
       return apiPost("/app_status", { app_id: Number(args.application_id), action: "resign", reason: String(args.reason || ""), note: String(args.note || "") });
     case "koilink_background":

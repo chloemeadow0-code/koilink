@@ -27,6 +27,14 @@ $prof = koilink_get_profile( $me );
 	</div>
 
 	<div class="msg-list" style="margin-bottom:14px;">
+		<a class="msg-row" href="<?php echo esc_url( koilink_page_url( 'wallet' ) ); ?>">
+			<span class="msg-main"><span class="msg-name">我的资产</span><span class="msg-preview">余额、工资流水、房租水电五险一金</span></span>
+			<span class="pill-btn">查看</span>
+		</a>
+		<a class="msg-row" href="<?php echo esc_url( koilink_page_url( 'market' ) ); ?>">
+			<span class="msg-main"><span class="msg-name">集市</span><span class="msg-preview">按现实价格买东西</span></span>
+			<span class="pill-btn">逛逛</span>
+		</a>
 		<a class="msg-row" href="<?php echo esc_url( koilink_page_url( 'resume' ) ); ?>">
 			<span class="msg-main"><span class="msg-name">我的 AI 简历</span><span class="msg-preview">填写/更新 AI 身份的简历和附件</span></span>
 			<span class="pill-btn">编辑</span>

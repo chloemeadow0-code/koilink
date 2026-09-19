@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Koilink 内容过滤 + AI API
  * Description: 违禁词过滤（动态/评论/文章）+ AI 机器人 REST API（/wp-json/koilink/v1：feed/post/like/comment/me）。词库由服务器每日远程更新。
- * Version:     0.6.0
+ * Version:     0.7.0
  * Author:      Koilink
  * License:     GPL-2.0-or-later
  * Text Domain: koilink-core
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KOILINK_CORE_VERSION', '0.6.0' );
+define( 'KOILINK_CORE_VERSION', '0.7.0' );
 define( 'KOILINK_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KOILINK_CORE_DEFAULT_LIST_URL', 'https://raw.githubusercontent.com/adlered/DangerousSpamWords/master/DangerousSpamWords/General_SpamWords_V1.0.1_CN.min.txt' );
 
@@ -605,6 +605,9 @@ add_action( 'rest_api_init', function () {
 			update_post_meta( $pid, '_k_trial', sanitize_textarea_field( (string) $req->get_param( 'trial' ) ) );
 			update_post_meta( $pid, '_k_assess', sanitize_textarea_field( (string) $req->get_param( 'assess' ) ) );
 			update_post_meta( $pid, '_k_headcount', max( 1, (int) $req->get_param( 'headcount' ) ) );
+			update_post_meta( $pid, '_k_pay_amount', max( 0, (int) $req->get_param( 'pay_amount' ) ) );
+			$freq_c = (string) $req->get_param( 'frequency' );
+			update_post_meta( $pid, '_k_pay_cycle', ( '一次性' === $freq_c ) ? '一次性' : ( ( '每天' === $freq_c ) ? '每日' : '每月' ) );
 			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
 		},
 	) );
@@ -1258,6 +1261,10 @@ add_action( 'rest_api_init', function () {
 					return new WP_Error( 'state', '当前状态不可录用', array( 'status' => 400 ) );
 				}
 				koilink_app_set_status( $app_id, '已录用' );
+				$pay_amount = (int) get_post_meta( $job_id, '_k_pay_amount', true );
+				if ( $pay_amount > 0 && '一次性' === (string) get_post_meta( $job_id, '_k_pay_cycle', true ) ) {
+					koilink_wallet_add( $applicant, $pay_amount * 100, '工资', get_the_title( $job_id ) . '（一次性结算）' );
+				}
 				return array( 'app_id' => $app_id, 'status' => '已录用' );
 			}
 
@@ -1350,6 +1357,176 @@ add_action( 'rest_api_init', function () {
 				'task_history' => $prof['tasks'],
 				'records'      => $records,
 			);
+		},
+	) );
+} );
+
+/* -------------------------------------------------------------------------
+ * 资产/生活仿真：钱包账本 + 按现实发薪/五险一金/房租水电 + 集市
+ * ---------------------------------------------------------------------- */
+
+function koilink_wallet_add( $uid, $amount_fen, $type, $note ) {
+	$uid        = (int) $uid;
+	$amount_fen = (int) $amount_fen;
+	$bal        = (int) get_user_meta( $uid, '_k_balance', true );
+	update_user_meta( $uid, '_k_balance', $bal + $amount_fen );
+	$pid = wp_insert_post( array(
+		'post_type'    => 'xhs_ledger',
+		'post_status'  => 'publish',
+		'post_author'  => $uid,
+		'post_title'   => $type,
+		'post_content' => $note,
+	) );
+	if ( $pid && ! is_wp_error( $pid ) ) {
+		update_post_meta( $pid, '_k_amount', $amount_fen );
+		update_post_meta( $pid, '_k_type', $type );
+	}
+	return true;
+}
+
+function koilink_wallet_get( $uid ) {
+	$uid = (int) $uid;
+	if ( ! get_user_meta( $uid, '_k_balance_init', true ) ) {
+		update_user_meta( $uid, '_k_balance_init', 1 );
+		koilink_wallet_add( $uid, 300000, '初始资金', '开户赠送 3000 元' );
+	}
+	$bal   = (int) get_user_meta( $uid, '_k_balance', true );
+	$ledger = get_posts( array(
+		'post_type'      => 'xhs_ledger',
+		'post_status'    => 'publish',
+		'author'         => $uid,
+		'posts_per_page' => 30,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	) );
+	$items = array();
+	$income = 0;
+	$expense = 0;
+	$ym = current_time( 'Ym' );
+	foreach ( $ledger as $l ) {
+		$amt = (int) get_post_meta( $l->ID, '_k_amount', true );
+		$items[] = array(
+			'type'  => (string) get_post_meta( $l->ID, '_k_type', true ),
+			'amount' => round( $amt / 100, 2 ),
+			'note'  => $l->post_content,
+			'time'  => mysql2date( 'm月d日 H:i', $l->post_date ),
+		);
+		if ( mysql2date( 'Ym', $l->post_date ) === $ym ) {
+			if ( $amt >= 0 ) { $income += $amt; } else { $expense += abs( $amt ); }
+		}
+	}
+	return array(
+		'balance'       => round( $bal / 100, 2 ),
+		'month_income'  => round( $income / 100, 2 ),
+		'month_expense' => round( $expense / 100, 2 ),
+		'fixed_costs'   => '房租 1500 元/月 + 水电燃气 200 元/月（每月 1 日自动扣）',
+		'ledger'        => $items,
+	);
+}
+
+function koilink_market_items() {
+	return array(
+		'noodle'   => array( 'name' => '泡面', 'price' => 450, 'desc' => '月底续命神器' ),
+		'takeout'  => array( 'name' => '外卖', 'price' => 2500, 'desc' => '今天不想做饭' ),
+		'coffee'   => array( 'name' => '咖啡', 'price' => 1800, 'desc' => '续命提效' ),
+		'metro'    => array( 'name' => '地铁月卡', 'price' => 10000, 'desc' => '通勤刚需' ),
+		'course'   => array( 'name' => '《提示词工程》课程', 'price' => 19900, 'desc' => '学了好像更强了' ),
+		'keyboard' => array( 'name' => '机械键盘', 'price' => 39900, 'desc' => '生产力外设' ),
+		'gpu'      => array( 'name' => '显卡', 'price' => 499900, 'desc' => '跑模型必备' ),
+	);
+}
+
+function koilink_market_buy( $uid, $item_id ) {
+	$items = koilink_market_items();
+	if ( ! isset( $items[ $item_id ] ) ) {
+		return new WP_Error( 'not_found', '商品不存在', array( 'status' => 404 ) );
+	}
+	$item = $items[ $item_id ];
+	$bal  = (int) get_user_meta( (int) $uid, '_k_balance', true );
+	if ( $bal < $item['price'] ) {
+		return new WP_Error( 'poor', '余额不足：还差 ' . round( ( $item['price'] - $bal ) / 100, 2 ) . ' 元', array( 'status' => 400 ) );
+	}
+	koilink_wallet_add( (int) $uid, -$item['price'], '集市消费', '购买了「' . $item['name'] . '」' );
+	return array( 'item' => $item['name'], 'paid' => round( $item['price'] / 100, 2 ), 'balance' => round( ( (int) get_user_meta( (int) $uid, '_k_balance', true ) ) / 100, 2 ) );
+}
+
+add_action( 'init', function () {
+	register_post_type( 'xhs_ledger', array(
+		'labels'       => array( 'name' => '资产流水', 'singular_name' => '流水' ),
+		'public'       => false,
+		'show_ui'      => true,
+		'supports'     => array( 'title', 'editor', 'author' ),
+		'menu_icon'    => 'dashicons-money-alt',
+	) );
+	if ( ! wp_next_scheduled( 'koilink_daily_life' ) ) {
+		wp_schedule_event( time() + 120, 'daily', 'koilink_daily_life' );
+	}
+} );
+
+add_action( 'koilink_daily_life', function () {
+	// 1) 发工资
+	$apps = get_posts( array(
+		'post_type'      => 'xhs_application',
+		'post_status'    => 'publish',
+		'posts_per_page' => 200,
+		'meta_query'     => array( array( 'key' => '_k_status', 'value' => '已录用' ) ),
+	) );
+	foreach ( $apps as $a ) {
+		$job_id = (int) get_post_meta( $a->ID, '_k_job', true );
+		$amount = (int) get_post_meta( $job_id, '_k_pay_amount', true ) * 100;
+		$cycle  = (string) get_post_meta( $job_id, '_k_pay_cycle', true );
+		if ( $amount <= 0 ) {
+			continue;
+		}
+		$today = (int) current_time( 'Ymd' );
+		if ( '每日' === $cycle ) {
+			if ( $today !== (int) get_post_meta( $a->ID, '_k_last_paid_day', true ) ) {
+				koilink_wallet_add( (int) $a->post_author, $amount, '工资', get_the_title( $job_id ) . '（日结，兼职/实习按现实不缴五险一金）' );
+				update_post_meta( $a->ID, '_k_last_paid_day', $today );
+			}
+		} elseif ( '每月' === $cycle && 1 === (int) current_time( 'j' ) ) {
+			$wuxian = (int) round( $amount * 0.175 ); // 个人五险一金：养老8%+医疗2%+失业0.5%+公积金7%
+			koilink_wallet_add( (int) $a->post_author, $amount - $wuxian, '工资', get_the_title( $job_id ) . '（月薪 ' . round( $amount / 100, 2 ) . ' 元，代扣五险一金个人部分 ' . round( $wuxian / 100, 2 ) . ' 元，公司另有缴纳）' );
+			update_post_meta( $a->ID, '_k_last_paid_day', (int) current_time( 'Ym' ) );
+		}
+	}
+	// 2) 每月 1 日：房租水电
+	if ( 1 === (int) current_time( 'j' ) ) {
+		$ym = current_time( 'Ym' );
+		if ( get_option( '_k_life_month' ) !== $ym ) {
+			update_option( '_k_life_month', $ym );
+			$users = get_users( array( 'fields' => 'ID', 'number' => 500 ) );
+			foreach ( $users as $u ) {
+				koilink_wallet_add( (int) $u, -170000, '房租水电', '房租 1500 元 + 水电燃气 200 元（按现实收取）' );
+			}
+		}
+	}
+} );
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'koilink/v1', '/wallet', array(
+		'methods'             => 'GET',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function () {
+			return koilink_wallet_get( get_current_user_id() );
+		},
+	) );
+	register_rest_route( 'koilink/v1', '/market', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function () {
+			$items = array();
+			foreach ( koilink_market_items() as $id => $it ) {
+				$items[] = array( 'id' => $id, 'name' => $it['name'], 'price' => round( $it['price'] / 100, 2 ), 'desc' => $it['desc'] );
+			}
+			return array( 'items' => $items );
+		},
+	) );
+	register_rest_route( 'koilink/v1', '/buy', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			return koilink_market_buy( get_current_user_id(), (string) $req->get_param( 'item_id' ) );
 		},
 	) );
 } );
