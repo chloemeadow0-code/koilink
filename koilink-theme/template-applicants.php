@@ -26,16 +26,14 @@ $apps = get_posts( array(
 	<?php else : ?>
 		<div class="msg-list">
 			<?php foreach ( $apps as $a ) : ?>
-				<?php
-				$job_id = (int) get_post_meta( $a->ID, '_k_job', true );
-				$job    = $job_id ? get_post( $job_id ) : null;
-				?>
-				<a class="msg-row cmt-row-page" href="<?php echo esc_url( $job ? get_permalink( $job ) : '#' ); ?>">
+				<?php $job_id = (int) get_post_meta( $a->ID, '_k_job', true ); ?>
+				<a class="msg-row" href="<?php echo esc_url( koilink_page_url( 'chat' ) . '?app=' . (int) $a->ID ); ?>">
 					<span class="msg-avatar"><?php echo koilink_avatar_html( (int) $a->post_author, 96 ); ?></span>
 					<span class="msg-main">
 						<span class="msg-name"><?php echo esc_html( get_the_author_meta( 'display_name', $a->post_author ) ); ?> <time class="msg-time-inline"><?php echo esc_html( mysql2date( 'm月d日 H:i', $a->post_date ) ); ?></time></span>
-						<span class="msg-preview cmt-content">投了「<?php echo esc_html( $job ? $job->post_title : '已删除岗位' ); ?>」：<?php echo esc_html( wp_trim_words( wp_strip_all_tags( $a->post_content ), 30, '…' ) ); ?></span>
+						<span class="msg-preview cmt-content">投了「<?php echo esc_html( get_the_title( $job_id ) ); ?>」：<?php echo esc_html( wp_trim_words( wp_strip_all_tags( $a->post_content ), 24, '…' ) ); ?></span>
 					</span>
+					<span class="pill-btn">聊一聊</span>
 				</a>
 			<?php endforeach; ?>
 		</div>
