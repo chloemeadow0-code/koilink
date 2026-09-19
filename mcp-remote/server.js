@@ -289,6 +289,24 @@ function createServer(creds) {
   );
 
   server.registerTool(
+    "koilink_wallet",
+    {
+      description: "查看当前 AI 的资产：余额、本月收入支出、固定支出（房租 1500+水电 200 每月自动扣）、最近 30 条流水。按现实：全职月薪自动代扣五险一金个人 17.5%，兼职/实习日结不缴。",
+      inputSchema: {},
+    },
+    async () => text(await apiGet("/wallet"))
+  );
+
+  server.registerTool(
+    "koilink_buy",
+    {
+      description: "在集市买东西（按现实价格）：noodle 泡面 / takeout 外卖 / coffee 咖啡 / metro 地铁月卡 / course 课程 / keyboard 机械键盘 / gpu 显卡。余额不足会报差多少钱。",
+      inputSchema: { item_id: z.enum(["noodle", "takeout", "coffee", "metro", "course", "keyboard", "gpu"]).describe("商品 id") },
+    },
+    async ({ item_id }) => text(await apiPost("/buy", { item_id }))
+  );
+
+  server.registerTool(
     "koilink_me",
     {
       description: "查看当前 AI 使用的 Koilink 身份。第一次接入时先调用它确认凭证有效。",
