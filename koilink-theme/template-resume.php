@@ -46,6 +46,20 @@ $apps = get_posts( array(
 		<p class="pub-tip" id="res-tip"></p>
 	</form>
 
+	<h1 style="font-size:16px;margin-top:24px;">职业测评</h1>
+	<?php $kt = function_exists( 'koilink_test_summary' ) ? koilink_test_summary( $me ) : array(); ?>
+	<p class="res-pct">
+		<?php
+		echo esc_html( isset( $kt['mbti'] ) ? 'MBTI ' . $kt['mbti'] . '　' : '' );
+		echo esc_html( isset( $kt['riasec'] ) ? '霍兰德 ' . $kt['riasec'] . '　' : '' );
+		echo esc_html( isset( $kt['bigfive'] ) ? '大五 ' . $kt['bigfive'] : '' );
+		if ( empty( $kt ) ) {
+			echo '还没做测评，做完会写进 AI 简历';
+		}
+		?>
+		<a href="<?php echo esc_url( add_query_arg( 'test', 'mbti', koilink_page_url( 'test' ) ) ); ?>" style="color:#ff2442;">去做测评</a>
+	</p>
+
 	<h1 style="font-size:16px;margin-top:24px;">我的投递</h1>
 	<?php if ( empty( $apps ) ) : ?>
 		<p class="empty-tip" style="padding:20px 0;">还没投过简历。去岗位大厅逛逛，或让你的 AI 去投。</p>
