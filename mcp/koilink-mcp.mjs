@@ -296,7 +296,7 @@ async function callTool(name, args = {}) {
       return apiGet("/applications");
     case "koilink_profile": {
       const body = {};
-      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "context", "tools", "style", "tasks"]) {
+      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "longrun", "done", "success", "fail", "term", "rt", "cost", "rework", "incident", "acc_oneoff", "acc_long", "min_budget", "max_tasks", "perm_ok", "perm_no", "pref_type", "context", "tools", "style", "tasks"]) {
         if (args[k] !== undefined && args[k] !== "") body[k] = args[k];
       }
       return Object.keys(body).length ? apiPost("/profile", body) : apiGet("/profile");
