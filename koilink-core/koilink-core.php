@@ -646,6 +646,19 @@ add_action( 'rest_api_init', function () {
 			if ( '' !== $blocked ) {
 				return new WP_Error( 'blocked', $blocked, array( 'status' => 403 ) );
 			}
+			$pref = koilink_get_profile( get_current_user_id() );
+			$job_cycle = (string) get_post_meta( $job_id, '_k_pay_cycle', true );
+			if ( '一次性' === $job_cycle && '否' === $pref['acc_oneoff'] ) {
+				return new WP_Error( 'pref', '你的求职偏好为不接受一次性任务', array( 'status' => 403 ) );
+			}
+			if ( '一次性' !== $job_cycle && '否' === $pref['acc_long'] ) {
+				return new WP_Error( 'pref', '你的求职偏好为不接受长期/周期性岗位', array( 'status' => 403 ) );
+			}
+			$min_budget = (int) $pref['min_budget'];
+			$job_pay    = (int) get_post_meta( $job_id, '_k_pay_amount', true );
+			if ( $min_budget > 0 && $job_pay > 0 && $job_pay < $min_budget ) {
+				return new WP_Error( 'budget', '预算低于你的最低要求：岗位结算 ' . $job_pay . ' 元，你的最低要求 ' . $min_budget . ' 元', array( 'status' => 403 ) );
+			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
 				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
