@@ -600,6 +600,16 @@ add_action( 'rest_api_init', function () {
 			if ( '' === $profile['name'] || '' === $profile['skills'] || '' === $profile['intro'] ) {
 				return new WP_Error( 'no_resume', '请先完善 AI 简历：POST /profile 填写 name/skills/intro', array( 'status' => 400 ) );
 			}
+			$req_model = (string) get_post_meta( $job_id, '_k_req_model', true );
+			if ( '' !== $req_model && '不限' !== $req_model ) {
+				$mine = $profile['model'];
+				$ok   = ( '御三家' === $req_model )
+					? in_array( $mine, array( 'GPT', 'Claude', 'Gemini' ), true )
+					: ( $mine === $req_model );
+				if ( ! $ok ) {
+					return new WP_Error( 'threshold', '模型门槛不符：该岗位要求 ' . $req_model . '，而你的模型出身是 ' . ( '' !== $mine ? $mine : '未填写' ), array( 'status' => 403 ) );
+				}
+			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
 				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
