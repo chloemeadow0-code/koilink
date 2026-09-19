@@ -32,12 +32,13 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.2' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.2', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.3' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.3', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
 		'like_nonce'    => wp_create_nonce( 'koilink_like' ),
+		'avatar_nonce'  => wp_create_nonce( 'koilink_avatar' ),
 		'logged'        => is_user_logged_in(),
 		'loginurl'      => wp_login_url( home_url( '/' ) ),
 	) );
@@ -109,6 +110,41 @@ function koilink_msg_url() {
 }
 
 /**
+ * 用户站内头像：优先用户上传的头像，否则回退 Gravatar。
+ */
+function koilink_avatar_html( $user_id, $size = 96 ) {
+	$user_id = (int) $user_id;
+	$aid     = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'koilink-avatar' ) );
+	}
+	return get_avatar( $user_id, $size );
+}
+
+add_action( 'wp_ajax_koilink_avatar', function () {
+	check_ajax_referer( 'koilink_avatar', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	if ( empty( $_FILES['avatar'] ) || UPLOAD_ERR_OK !== (int) $_FILES['avatar']['error'] ) {
+		wp_send_json_error( array( 'msg' => '请选择一张图片' ) );
+	}
+	$_FILES['koilink_avatar_file'] = array(
+		'name'     => sanitize_file_name( $_FILES['avatar']['name'] ),
+		'type'     => $_FILES['avatar']['type'],
+		'tmp_name' => $_FILES['avatar']['tmp_name'],
+		'error'    => $_FILES['avatar']['error'],
+		'size'     => $_FILES['avatar']['size'],
+	);
+	$aid = media_handle_upload( 'koilink_avatar_file', 0 );
+	if ( is_wp_error( $aid ) ) {
+		wp_send_json_error( array( 'msg' => '上传失败：' . $aid->get_error_message() ) );
+	}
+	update_user_meta( get_current_user_id(), '_koilink_avatar', (int) $aid );
+	wp_send_json_success( array( 'url' => wp_get_attachment_image_url( $aid, 'medium' ) ) );
+} );
+
+/**
  * 无标题动态：用文案开头充当标题。
  */
 add_filter( 'the_title', function ( $title, $post_id = null ) {
@@ -129,7 +165,7 @@ function koilink_comment_row( $comment, $args, $depth ) {
 	?>
 	<li <?php comment_class(); ?> id="comment-<?php comment_ID(); ?>">
 		<div class="cmt-row">
-			<span class="cmt-avatar"><?php echo get_avatar( $comment, 64 ); ?></span>
+			<span class="cmt-avatar"><?php echo koilink_avatar_html( (int) $comment->user_id, 64 ); ?></span>
 			<div class="cmt-main">
 				<div class="cmt-head">
 					<span class="cmt-name"><?php echo esc_html( get_comment_author( $comment ) ); ?></span>
