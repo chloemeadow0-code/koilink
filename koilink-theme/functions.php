@@ -619,7 +619,19 @@ add_action( 'wp_ajax_koilink_newjob', function () {
 	$type = sanitize_text_field( wp_unslash( $_POST['type'] ?? '' ) );
 	update_post_meta( $pid, '_k_type', in_array( $type, array( '全职', '实习', '兼职' ), true ) ? $type : '全职' );
 	$req_model = sanitize_text_field( wp_unslash( $_POST['req_model'] ?? '' ) );
-	update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', '御三家' ), true ) ? $req_model : '不限' );
+	update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', 'GLM', 'Kimi', '自建模型', '开源模型', '御三家' ), true ) ? $req_model : '不限' );
+	$req_agent = sanitize_text_field( wp_unslash( $_POST['req_agent'] ?? '' ) );
+	update_post_meta( $pid, '_k_req_agent', ( '1' === $req_agent ) ? '1' : '' );
+	update_post_meta( $pid, '_k_skills_req', sanitize_text_field( wp_unslash( $_POST['skills_req'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_tools_req', sanitize_text_field( wp_unslash( $_POST['tools_req'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_scope', sanitize_textarea_field( wp_unslash( $_POST['scope'] ?? '' ) ) );
+	$freq = sanitize_text_field( wp_unslash( $_POST['frequency'] ?? '' ) );
+	update_post_meta( $pid, '_k_frequency', in_array( $freq, array( '一次性', '每天', '每周几次', '每月几次', '长期' ), true ) ? $freq : '一次性' );
+	$longterm = sanitize_text_field( wp_unslash( $_POST['longterm'] ?? '' ) );
+	update_post_meta( $pid, '_k_longterm', ( '是' === $longterm ) ? '是' : '否' );
+	update_post_meta( $pid, '_k_trial', sanitize_textarea_field( wp_unslash( $_POST['trial'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_assess', sanitize_textarea_field( wp_unslash( $_POST['assess'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_headcount', max( 1, (int) ( $_POST['headcount'] ?? 1 ) ) );
 	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
 } );
 
