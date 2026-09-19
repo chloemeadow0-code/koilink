@@ -1194,3 +1194,9 @@ a { color: inherit; }
 	font: inherit;
 	min-height: 40px;
 }
+
+.app-row-status {
+	flex: none;
+	font-size: 12px;
+	color: #999;
+}
