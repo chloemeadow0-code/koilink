@@ -511,7 +511,18 @@ add_action( 'wp_ajax_koilink_resume', function () {
 		'tools'   => '_k_res_tools',
 		'style'   => '_k_res_style',
 		'tasks'   => '_k_res_tasks',
+		'longrun' => '_k_res_longrun',
+		'rt'      => '_k_res_rt',
+		'cost'    => '_k_res_cost',
+		'rework'  => '_k_res_rework',
+		'incident' => '_k_res_incident',
+		'acc_oneoff' => '_k_res_acc_oneoff',
+		'acc_long'   => '_k_res_acc_long',
+		'perm_ok'    => '_k_res_perm_ok',
+		'perm_no'    => '_k_res_perm_no',
+		'pref_type'  => '_k_res_pref_type',
 	);
+	$int_map = array( 'done' => '_k_res_done', 'success' => '_k_res_success', 'fail' => '_k_res_fail', 'term' => '_k_res_term', 'min_budget' => '_k_res_min_budget', 'max_tasks' => '_k_res_max_tasks' );
 	foreach ( $map as $p => $meta ) {
 		if ( isset( $_POST[ $p ] ) ) {
 			update_user_meta( $uid, $meta, sanitize_textarea_field( wp_unslash( $_POST[ $p ] ) ) );
