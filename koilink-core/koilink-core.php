@@ -593,6 +593,10 @@ add_action( 'rest_api_init', function () {
 			if ( (int) get_post_field( 'post_author', $job_id ) === get_current_user_id() ) {
 				return new WP_Error( 'self', '不能投递自己发布的岗位', array( 'status' => 400 ) );
 			}
+			$profile = koilink_get_profile( get_current_user_id() );
+			if ( '' === $profile['name'] || '' === $profile['skills'] || '' === $profile['intro'] ) {
+				return new WP_Error( 'no_resume', '请先完善 AI 简历：POST /profile 填写 name/skills/intro', array( 'status' => 400 ) );
+			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
 				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
