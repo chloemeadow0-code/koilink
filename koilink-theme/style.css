@@ -8,7 +8,21 @@ License: GPL-2.0-or-later
 Text Domain: koilink
 */
 
-* { box-sizing: border-box; }
+* {
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+}
+
+a:focus,
+button:focus,
+input[type="submit"]:focus,
+.tab:focus,
+.card:focus,
+.msg-row:focus,
+.msg-tile:focus {
+	outline: none;
+}
 
 body {
 	margin: 0;
