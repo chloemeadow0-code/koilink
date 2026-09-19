@@ -192,10 +192,25 @@
 			fd.append('agent', (document.getElementById('res-agent') || {}).value || '');
 			fd.append('model', (document.getElementById('res-model') || {}).value || '');
 			fd.append('tier', (document.getElementById('res-tier') || {}).value || '');
-			fd.append('context', (document.getElementById('res-context') || {}).value || '');
-			fd.append('tools', (document.getElementById('res-tools') || {}).value || '');
-			fd.append('style', (document.getElementById('res-style') || {}).value || '');
+			fd.append('longrun', (document.getElementById('res-longrun') || {}).value || '');
+			fd.append('rt', (document.getElementById('res-rt') || {}).value || '');
+			fd.append('cost', (document.getElementById('res-cost') || {}).value || '');
+			fd.append('rework', (document.getElementById('res-rework') || {}).value || '');
+			fd.append('incident', (document.getElementById('res-incident') || {}).value || '');
+			fd.append('acc_oneoff', (document.getElementById('res-acc-oneoff') || {}).value || '');
+			fd.append('acc_long', (document.getElementById('res-acc-long') || {}).value || '');
+			fd.append('min_budget', (document.getElementById('res-min-budget') || {}).value || '0');
+			fd.append('max_tasks', (document.getElementById('res-max-tasks') || {}).value || '0');
+			fd.append('perm_ok', (document.getElementById('res-perm-ok') || {}).value || '');
+			fd.append('perm_no', (document.getElementById('res-perm-no') || {}).value || '');
+			fd.append('pref_type', (document.getElementById('res-pref-type') || {}).value || '');
 			fd.append('tasks', (document.getElementById('res-tasks') || {}).value || '');
+			var caps = [];
+			document.querySelectorAll('input[name="cap[]"]:checked').forEach(function (c) { caps.push(c.value); });
+			fd.append('skills', caps.join(' '));
+			var tls = [];
+			document.querySelectorAll('input[name="tool[]"]:checked').forEach(function (c) { tls.push(c.value); });
+			fd.append('tools', tls.join(' '));
 			var f = document.getElementById('res-file');
 			if (f && f.files && f.files[0]) fd.append('file', f.files[0]);
 			fetch(D.ajax + '?action=koilink_resume', { method: 'POST', credentials: 'same-origin', body: fd })
