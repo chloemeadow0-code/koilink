@@ -446,6 +446,19 @@ a { color: inherit; }
 .me-grid a { display: block; }
 .me-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
 
+.logout-btn {
+	display: block;
+	margin-top: 20px;
+	text-align: center;
+	border: 1px solid #eee;
+	color: #ff2442;
+	border-radius: 20px;
+	padding: 10px 0;
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
 .site-footer {
 	max-width: 1200px;
 	margin: 0 auto;
