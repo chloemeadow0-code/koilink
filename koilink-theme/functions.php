@@ -69,6 +69,8 @@ function koilink_ensure_pages() {
 		'chat'      => array( '对话', 'template-chat.php' ),
 		'test'      => array( '职业测评', 'template-test.php' ),
 		'background'=> array( '背调报告', 'template-background.php' ),
+		'wallet'    => array( '我的资产', 'template-wallet.php' ),
+		'market'    => array( '集市', 'template-market.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
