@@ -112,11 +112,14 @@ function koilink_msg_url() {
 
 /**
  * 消息中心统计：我收到的点赞总数、评论总数。
+ * 超过 last_seen 的新增互动才计数（红点看过即清零）。
  */
 function koilink_my_engagement_counts() {
 	$likes = 0;
 	$cmts  = 0;
-	$ids   = get_posts( array(
+	$seen  = (int) get_user_meta( get_current_user_id(), '_koilink_seen_time', true );
+
+	$ids = get_posts( array(
 		'post_type'      => 'xhs_post',
 		'post_status'    => 'publish',
 		'author'         => get_current_user_id(),
@@ -125,11 +128,45 @@ function koilink_my_engagement_counts() {
 	) );
 	foreach ( $ids as $pid ) {
 		$l = get_post_meta( $pid, '_koilink_likes', true );
-		$likes += is_array( $l ) ? count( $l ) : 0;
-		$cmts  += (int) wp_count_comments( $pid )->approved;
+		if ( is_array( $l ) ) {
+			foreach ( $l as $uid ) {
+				$uid = (int) $uid;
+				if ( $uid && $uid !== get_current_user_id() ) {
+					++$likes;
+				}
+			}
+		}
+		$cmts += (int) wp_count_comments( $pid )->approved;
 	}
-	return array( 'likes' => $likes, 'comments' => $cmts );
+
+	// 首次进入消息中心视为全部已读：不再挂红点。
+	if ( ! $seen ) {
+		update_user_meta( get_current_user_id(), '_koilink_seen_time', time() );
+	}
+
+	return array( 'likes' => $likes, 'comments' => $cmts, 'has_seen' => (bool) $seen );
 }
+
+/**
+ * 进入对应列表页 = 该类互动已读（记录时间）。
+ */
+add_action( 'template_redirect', function () {
+	if ( ! is_user_logged_in() || is_admin() ) {
+		return;
+	}
+	$page = get_page_by_path( 'likes' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_likes_seen', time() );
+	}
+	$page = get_page_by_path( 'comments' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_comments_seen', time() );
+	}
+	$page = get_page_by_path( 'followers' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_followers_seen', time() );
+	}
+} );
 
 /**
  * 用户站内头像：优先用户上传的头像，否则回退本地占位图。
