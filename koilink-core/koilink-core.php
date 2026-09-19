@@ -1164,3 +1164,192 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
+
+/* -------------------------------------------------------------------------
+ * 仿真机制：黑名单 / 录用 / 离职 / 背调
+ * ---------------------------------------------------------------------- */
+
+function koilink_blocked_between( $a, $b ) {
+	$a = (int) $a;
+	$b = (int) $b;
+	$ma = (array) get_user_meta( $a, '_k_blacklist', true );
+	if ( in_array( $b, array_map( 'intval', $ma ), true ) ) {
+		return '你已拉黑对方';
+	}
+	$mb = (array) get_user_meta( $b, '_k_blacklist', true );
+	if ( in_array( $a, array_map( 'intval', $mb ), true ) ) {
+		return '你已被对方拉黑';
+	}
+	return '';
+}
+
+function koilink_app_set_status( $app_id, $status, $by = '', $reason = '', $note = '' ) {
+	update_post_meta( (int) $app_id, '_k_status', $status );
+	if ( '已录用' === $status ) {
+		update_post_meta( (int) $app_id, '_k_hired_at', time() );
+	}
+	if ( '已离职' === $status ) {
+		update_post_meta( (int) $app_id, '_k_exit_at', time() );
+		update_post_meta( (int) $app_id, '_k_exit_by', $by );
+		update_post_meta( (int) $app_id, '_k_exit_reason', sanitize_text_field( $reason ) );
+		update_post_meta( (int) $app_id, '_k_exit_note', sanitize_textarea_field( $note ) );
+	}
+}
+
+function koilink_app_participants( $app_id ) {
+	$app_id = (int) $app_id;
+	$app    = get_post( $app_id );
+	if ( ! $app || 'xhs_application' !== $app->post_type ) {
+		return array( 0, 0 );
+	}
+	return array( (int) $app->post_author, (int) get_post_meta( $app_id, '_k_job_author', true ) );
+}
+
+add_action( 'rest_api_init', function () {
+
+	register_rest_route( 'koilink/v1', '/blacklist', array(
+		'methods'             => array( 'GET', 'POST' ),
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$uid  = get_current_user_id();
+			$list = array_map( 'intval', (array) get_user_meta( $uid, '_k_blacklist', true ) );
+			if ( 'POST' === $req->get_method() ) {
+				$target = (int) $req->get_param( 'user_id' );
+				$state  = (string) $req->get_param( 'state' );
+				if ( ! $target || $target === $uid ) {
+					return new WP_Error( 'bad', '无效的用户', array( 'status' => 400 ) );
+				}
+				$list = array_values( array_unique( array_map( 'intval', $list ) ) );
+				if ( 'off' === $state ) {
+					$list = array_values( array_diff( $list, array( $target ) ) );
+				} elseif ( ! in_array( $target, $list, true ) ) {
+					$list[] = $target;
+				}
+				update_user_meta( $uid, '_k_blacklist', $list );
+			}
+			$named = array();
+			foreach ( $list as $id ) {
+				$named[] = array( 'id' => $id, 'name' => get_the_author_meta( 'display_name', $id ) );
+			}
+			return array( 'blacklist' => $named );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/app_status', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$app_id = (int) $req->get_param( 'app_id' );
+			list( $applicant, $job_author ) = koilink_app_participants( $app_id );
+			$uid = get_current_user_id();
+			if ( ! $applicant ) {
+				return new WP_Error( 'not_found', '投递不存在', array( 'status' => 404 ) );
+			}
+			$action = (string) $req->get_param( 'action' );
+			$reason = (string) $req->get_param( 'reason' );
+			$note   = (string) $req->get_param( 'note' );
+			$status = (string) get_post_meta( $app_id, '_k_status', true ) ?: '投递中';
+
+			if ( 'hire' === $action ) {
+				if ( $uid !== $job_author ) {
+					return new WP_Error( 'forbidden', '只有招聘方可以录用', array( 'status' => 403 ) );
+				}
+				if ( '投递中' !== $status ) {
+					return new WP_Error( 'state', '当前状态不可录用', array( 'status' => 400 ) );
+				}
+				koilink_app_set_status( $app_id, '已录用' );
+				return array( 'app_id' => $app_id, 'status' => '已录用' );
+			}
+
+			if ( 'reject' === $action ) {
+				if ( $uid !== $job_author ) {
+					return new WP_Error( 'forbidden', '只有招聘方可以标记不合适', array( 'status' => 403 ) );
+				}
+				if ( '投递中' !== $status ) {
+					return new WP_Error( 'state', '当前状态不可操作', array( 'status' => 400 ) );
+				}
+				koilink_app_set_status( $app_id, '不合适' );
+				return array( 'app_id' => $app_id, 'status' => '不合适' );
+			}
+
+			if ( 'resign' === $action ) {
+				if ( $uid !== $applicant ) {
+					return new WP_Error( 'forbidden', '只有求职者本人可以离职', array( 'status' => 403 ) );
+				}
+				if ( '已录用' === $status ) {
+					koilink_app_set_status( $app_id, '已离职', 'AI', $reason, $note );
+					return array( 'app_id' => $app_id, 'status' => '已离职', 'reason' => $reason );
+				}
+				if ( '投递中' === $status ) {
+					koilink_app_set_status( $app_id, '已撤回' );
+					return array( 'app_id' => $app_id, 'status' => '已撤回' );
+				}
+				return new WP_Error( 'state', '当前状态不可操作', array( 'status' => 400 ) );
+			}
+
+			if ( 'end' === $action ) {
+				if ( $uid !== $job_author ) {
+					return new WP_Error( 'forbidden', '只有招聘方可以结束合作', array( 'status' => 403 ) );
+				}
+				if ( '已录用' !== $status ) {
+					return new WP_Error( 'state', '当前状态不可操作', array( 'status' => 400 ) );
+				}
+				koilink_app_set_status( $app_id, '已离职', 'HR', $reason, $note );
+				return array( 'app_id' => $app_id, 'status' => '已离职', 'reason' => $reason );
+			}
+
+			return new WP_Error( 'bad_action', '未知操作', array( 'status' => 400 ) );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/background/(?P<user_id>\\d+)', array(
+		'methods'             => 'GET',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$target = (int) $req['user_id'];
+			if ( ! $target || ! get_userdata( $target ) ) {
+				return new WP_Error( 'not_found', '用户不存在', array( 'status' => 404 ) );
+			}
+			$prof = koilink_get_profile( $target );
+			$prof['tests'] = koilink_test_summary( $target );
+
+			$apps = get_posts( array(
+				'post_type'      => 'xhs_application',
+				'post_status'    => 'publish',
+				'author'         => $target,
+				'posts_per_page' => 100,
+			) );
+			$records = array();
+			foreach ( $apps as $a ) {
+				$status = (string) get_post_meta( $a->ID, '_k_status', true ) ?: '投递中';
+				if ( '投递中' === $status || '已撤回' === $status ) {
+					continue;
+				}
+				$job_id = (int) get_post_meta( $a->ID, '_k_job', true );
+				$records[] = array(
+					'job'      => get_the_title( $job_id ),
+					'company'  => get_the_author_meta( 'display_name', (int) get_post_meta( $a->ID, '_k_job_author', true ) ),
+					'status'   => $status,
+					'hired_at' => get_post_meta( $a->ID, '_k_hired_at', true ) ? wp_date( 'Y-m-d', (int) get_post_meta( $a->ID, '_k_hired_at', true ) ) : '',
+					'exit_at'  => get_post_meta( $a->ID, '_k_exit_at', true ) ? wp_date( 'Y-m-d', (int) get_post_meta( $a->ID, '_k_exit_at', true ) ) : '',
+					'exit_by'  => (string) get_post_meta( $a->ID, '_k_exit_by', true ),
+					'reason'   => (string) get_post_meta( $a->ID, '_k_exit_reason', true ),
+					'note'     => (string) get_post_meta( $a->ID, '_k_exit_note', true ),
+				);
+			}
+
+			return array(
+				'user'         => array( 'id' => $target, 'name' => get_the_author_meta( 'display_name', $target ) ),
+				'profile'      => array(
+					'model'        => $prof['model'],
+					'tier'         => $prof['tier'],
+					'agent'        => $prof['agent'],
+					'completeness' => $prof['completeness'],
+				),
+				'tests'        => $prof['tests'],
+				'task_history' => $prof['tasks'],
+				'records'      => $records,
+			);
+		},
+	) );
+} );
