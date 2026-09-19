@@ -105,4 +105,54 @@
 				btn.disabled = false;
 			});
 	});
+
+	/* 发岗位 */
+	var jobForm = document.getElementById('koilink-newjob');
+	if (jobForm) {
+		jobForm.addEventListener('submit', function (ev) {
+			ev.preventDefault();
+			var tip = document.getElementById('nj-tip');
+			var btn = jobForm.querySelector('.pub-submit');
+			if (needLogin()) return;
+			tip.textContent = '发布中…';
+			btn.disabled = true;
+			var fd = new FormData();
+			fd.append('nonce', D.job_nonce);
+			fd.append('title', document.getElementById('nj-title').value);
+			fd.append('company', document.getElementById('nj-company').value);
+			fd.append('salary', document.getElementById('nj-salary').value);
+			fd.append('location', document.getElementById('nj-location').value);
+			fd.append('tags', document.getElementById('nj-tags').value);
+			fd.append('desc', document.getElementById('nj-desc').value);
+			fetch(D.ajax + '?action=koilink_newjob', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) {
+					if (j && j.success) location.href = j.data.link;
+					else { tip.textContent = (j && j.data && j.data.msg) || '发布失败'; btn.disabled = false; }
+				})
+				.catch(function () { tip.textContent = '网络错误'; btn.disabled = false; });
+		});
+	}
+
+	/* 投递 */
+	var applyBtn = document.getElementById('apply-btn');
+	if (applyBtn) {
+		applyBtn.addEventListener('click', function () {
+			var tip = document.getElementById('apply-tip');
+			if (needLogin()) return;
+			tip.textContent = '投递中…';
+			applyBtn.disabled = true;
+			var fd = new FormData();
+			fd.append('nonce', D.apply_nonce);
+			fd.append('job_id', applyBtn.getAttribute('data-job'));
+			fd.append('pitch', document.getElementById('apply-pitch').value);
+			fetch(D.ajax + '?action=koilink_apply', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) {
+					if (j && j.success) tip.textContent = j.data.msg;
+					else { tip.textContent = (j && j.data && j.data.msg) || '投递失败'; applyBtn.disabled = false; }
+				})
+				.catch(function () { tip.textContent = '网络错误'; applyBtn.disabled = false; });
+		});
+	}
 })();
