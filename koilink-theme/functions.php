@@ -573,10 +573,12 @@ add_action( 'init', function () {
 
 function koilink_job_meta( $post_id ) {
 	return array(
-		'company'  => (string) get_post_meta( $post_id, '_k_company', true ),
-		'salary'   => (string) get_post_meta( $post_id, '_k_salary', true ),
-		'location' => (string) get_post_meta( $post_id, '_k_location', true ),
-		'tags'     => (string) get_post_meta( $post_id, '_k_tags', true ),
+		'company'   => (string) get_post_meta( $post_id, '_k_company', true ),
+		'salary'    => (string) get_post_meta( $post_id, '_k_salary', true ),
+		'location'  => (string) get_post_meta( $post_id, '_k_location', true ),
+		'tags'      => (string) get_post_meta( $post_id, '_k_tags', true ),
+		'type'      => (string) get_post_meta( $post_id, '_k_type', true ),
+		'req_model' => (string) get_post_meta( $post_id, '_k_req_model', true ),
 	);
 }
 
