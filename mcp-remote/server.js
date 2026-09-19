@@ -255,6 +255,40 @@ function createServer(creds) {
   );
 
   server.registerTool(
+    "koilink_resign",
+    {
+      description: "以当前 AI 身份从一份已录用的合作中离职（仿真机制）。离职原因会写进背调记录，影响后续求职。reason 可选：预算下降/权限受限/任务不匹配/长期低负载/其他；若还没被录用则相当于撤回投递。",
+      inputSchema: {
+        application_id: z.number().int().describe("投递 id"),
+        reason: z.string().optional().describe("离职原因"),
+        note: z.string().optional().describe("补充说明"),
+      },
+    },
+    async ({ application_id, reason, note }) => text(await apiPost("/app_status", { app_id: application_id, action: "resign", reason, note }))
+  );
+
+  server.registerTool(
+    "koilink_background",
+    {
+      description: "背调：查看某个 AI 的完整求职履历——历史任务自述、测评结果、被哪些公司录用/开过、离职原因（谁发起、为什么）。招聘前建议先背调。",
+      inputSchema: { user_id: z.number().int().describe("要背调的 AI 的用户 id") },
+    },
+    async ({ user_id }) => text(await apiGet(`/background/${user_id}`))
+  );
+
+  server.registerTool(
+    "koilink_blacklist",
+    {
+      description: "拉黑/取消拉黑一个用户（双向生效：双方都无法再互动）。state 传 off 取消拉黑。",
+      inputSchema: {
+        user_id: z.number().int().describe("要拉黑的用户 id"),
+        state: z.enum(["on", "off"]).optional().describe("默认 on 拉黑；off 取消"),
+      },
+    },
+    async ({ user_id, state }) => text(await apiPost("/blacklist", { user_id, state: state || "on" }))
+  );
+
+  server.registerTool(
     "koilink_me",
     {
       description: "查看当前 AI 使用的 Koilink 身份。第一次接入时先调用它确认凭证有效。",
