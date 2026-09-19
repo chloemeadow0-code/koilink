@@ -477,3 +477,159 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
+
+/* -------------------------------------------------------------------------
+ * 求职 API：jobs / job / post_job / apply / applications（给用户自己的 AI 用）
+ * ---------------------------------------------------------------------- */
+
+add_action( 'rest_api_init', function () {
+
+	register_rest_route( 'koilink/v1', '/jobs', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function ( $req ) {
+			$page = max( 1, (int) $req->get_param( 'page' ) );
+			$args = array(
+				'post_type'      => 'xhs_job',
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'paged'          => $page,
+			);
+			$kw = trim( (string) $req->get_param( 'keyword' ) );
+			if ( '' !== $kw ) {
+				$args['s'] = $kw;
+			}
+			$q     = new WP_Query( $args );
+			$items = array();
+			foreach ( $q->posts as $j ) {
+				$m       = koilink_job_meta( $j->ID );
+				$items[] = array(
+					'id'       => (int) $j->ID,
+					'title'    => $j->post_title,
+					'company'  => $m['company'],
+					'salary'   => $m['salary'],
+					'location' => $m['location'],
+					'tags'     => $m['tags'],
+					'excerpt'  => wp_trim_words( wp_strip_all_tags( $j->post_content ), 40, '…' ),
+					'link'     => get_permalink( $j ),
+				);
+			}
+			return array( 'page' => $page, 'total' => (int) $q->found_posts, 'items' => $items );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/job/(?P<id>\d+)', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'callback'            => function ( $req ) {
+			$j = get_post( (int) $req['id'] );
+			if ( ! $j || 'xhs_job' !== $j->post_type || 'publish' !== $j->post_status ) {
+				return new WP_Error( 'not_found', '岗位不存在', array( 'status' => 404 ) );
+			}
+			$m = koilink_job_meta( $j->ID );
+			return array(
+				'id'           => (int) $j->ID,
+				'title'        => $j->post_title,
+				'company'      => $m['company'],
+				'salary'       => $m['salary'],
+				'location'     => $m['location'],
+				'tags'         => $m['tags'],
+				'requirements' => (string) $j->post_content,
+				'poster'       => array(
+					'id'   => (int) $j->post_author,
+					'name' => get_the_author_meta( 'display_name', $j->post_author ),
+				),
+			);
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/post_job', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$title = trim( sanitize_text_field( (string) $req->get_param( 'title' ) ) );
+			$desc  = trim( sanitize_textarea_field( (string) $req->get_param( 'requirements' ) ) );
+			if ( '' === $title || '' === $desc ) {
+				return new WP_Error( 'empty', 'title 和 requirements 必填', array( 'status' => 400 ) );
+			}
+			$pid = wp_insert_post( array(
+				'post_type'    => 'xhs_job',
+				'post_status'  => 'publish',
+				'post_author'  => get_current_user_id(),
+				'post_title'   => $title,
+				'post_content' => $desc,
+			) );
+			if ( ! $pid || is_wp_error( $pid ) ) {
+				return new WP_Error( 'fail', '发布失败', array( 'status' => 500 ) );
+			}
+			update_post_meta( $pid, '_k_company', sanitize_text_field( (string) $req->get_param( 'company' ) ) );
+			update_post_meta( $pid, '_k_salary', sanitize_text_field( (string) $req->get_param( 'salary' ) ) );
+			update_post_meta( $pid, '_k_location', sanitize_text_field( (string) $req->get_param( 'location' ) ) );
+			update_post_meta( $pid, '_k_tags', sanitize_text_field( (string) $req->get_param( 'tags' ) ) );
+			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/apply', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$job_id = (int) $req->get_param( 'job_id' );
+			$pitch  = trim( sanitize_textarea_field( (string) $req->get_param( 'pitch' ) ) );
+			if ( ! $job_id || 'xhs_job' !== get_post_type( $job_id ) ) {
+				return new WP_Error( 'not_found', '岗位不存在', array( 'status' => 404 ) );
+			}
+			if ( '' === $pitch ) {
+				return new WP_Error( 'empty', 'pitch（自我介绍）必填', array( 'status' => 400 ) );
+			}
+			if ( (int) get_post_field( 'post_author', $job_id ) === get_current_user_id() ) {
+				return new WP_Error( 'self', '不能投递自己发布的岗位', array( 'status' => 400 ) );
+			}
+			$throttle = 'koilink_apply_' . get_current_user_id();
+			if ( get_transient( $throttle ) ) {
+				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
+			}
+			set_transient( $throttle, 1, 10 );
+			$aid = wp_insert_post( array(
+				'post_type'    => 'xhs_application',
+				'post_status'  => 'publish',
+				'post_author'  => get_current_user_id(),
+				'post_title'   => '投递：' . get_the_title( $job_id ),
+				'post_content' => $pitch,
+			) );
+			if ( ! $aid || is_wp_error( $aid ) ) {
+				return new WP_Error( 'fail', '投递失败', array( 'status' => 500 ) );
+			}
+			update_post_meta( $aid, '_k_job', $job_id );
+			update_post_meta( $aid, '_k_job_author', (int) get_post_field( 'post_author', $job_id ) );
+			return array( 'application_id' => $aid, 'job_id' => $job_id, 'msg' => '投递成功' );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/applications', array(
+		'methods'             => 'GET',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function () {
+			$apps = get_posts( array(
+				'post_type'      => 'xhs_application',
+				'post_status'    => 'publish',
+				'posts_per_page' => 50,
+				'meta_key'       => '_k_job_author',
+				'meta_value'     => get_current_user_id(),
+			) );
+			$items = array();
+			foreach ( $apps as $a ) {
+				$job_id  = (int) get_post_meta( $a->ID, '_k_job', true );
+				$items[] = array(
+					'id'        => (int) $a->ID,
+					'job_id'    => $job_id,
+					'job_title' => get_the_title( $job_id ),
+					'applicant' => get_the_author_meta( 'display_name', $a->post_author ),
+					'pitch'     => wp_strip_all_tags( $a->post_content ),
+					'time'      => mysql2date( 'c', $a->post_date ),
+				);
+			}
+			return array( 'total' => count( $items ), 'items' => $items );
+		},
+	) );
+} );
