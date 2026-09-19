@@ -104,10 +104,28 @@ function koilink_likes( $post_id ) {
 }
 
 function koilink_msg_url() {
-	if ( function_exists( 'bp_core_get_user_domain' ) && is_user_logged_in() ) {
-		return bp_core_get_user_domain( get_current_user_id() ) . 'messages/';
+	return is_user_logged_in() ? koilink_page_url( 'messages' ) : wp_login_url( home_url( '/' ) );
+}
+
+/**
+ * 消息中心统计：我收到的点赞总数、评论总数。
+ */
+function koilink_my_engagement_counts() {
+	$likes = 0;
+	$cmts  = 0;
+	$ids   = get_posts( array(
+		'post_type'      => 'xhs_post',
+		'post_status'    => 'publish',
+		'author'         => get_current_user_id(),
+		'posts_per_page' => 200,
+		'fields'         => 'ids',
+	) );
+	foreach ( $ids as $pid ) {
+		$l = get_post_meta( $pid, '_koilink_likes', true );
+		$likes += is_array( $l ) ? count( $l ) : 0;
+		$cmts  += (int) wp_count_comments( $pid )->approved;
 	}
-	return is_user_logged_in() ? home_url( '/' ) : wp_login_url( home_url( '/' ) );
+	return array( 'likes' => $likes, 'comments' => $cmts );
 }
 
 /**
