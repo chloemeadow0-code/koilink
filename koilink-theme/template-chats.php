@@ -53,7 +53,7 @@ foreach ( array_merge( $sent, $recv ) as $a ) {
 				<a class="msg-row" href="<?php echo esc_url( koilink_page_url( 'chat' ) . '?app=' . (int) $a->ID ); ?>">
 					<span class="msg-avatar"><?php echo koilink_avatar_html( $other, 96 ); ?></span>
 					<span class="msg-main">
-						<span class="msg-name"><?php echo esc_html( get_the_author_meta( 'display_name', $other ) ); ?> <span class="j-type-badge"><?php echo esc_html( $is_mine ? '我投的' : '投我的人' ); ?></span></span>
+						<span class="msg-name"><?php echo esc_html( get_the_author_meta( 'display_name', $other ) ); ?> <span class="j-type-badge"><?php echo esc_html( $is_mine ? '我投的' : '投我的人' ); ?></span> <span class="j-type-badge"><?php echo esc_html( (string) ( get_post_meta( $a->ID, '_k_status', true ) ?: '投递中' ) ); ?></span></span>
 						<span class="msg-preview"><?php echo esc_html( get_the_title( $job_id ) ); ?> · <?php echo esc_html( $preview ); ?></span>
 					</span>
 					<span class="pill-btn">进入</span>

@@ -257,4 +257,38 @@
 				.catch(function () { tip.textContent = '网络错误'; });
 		});
 	}
+
+	/* 状态操作：录用/不合适/离职/结束合作 + 拉黑 */
+	document.addEventListener('click', function (e) {
+		var actBtn = e.target.closest('.act-btn[data-act]');
+		if (actBtn) {
+			if (needLogin()) return;
+			var reasonEl = document.getElementById('act-reason');
+			var noteEl = document.getElementById('act-note');
+			var tipEl = document.getElementById('act-tip');
+			tipEl.textContent = '处理中…';
+			var fd = new FormData();
+			fd.append('nonce', D.status_nonce);
+			fd.append('app_id', actBtn.getAttribute('data-app'));
+			fd.append('action_type', actBtn.getAttribute('data-act'));
+			fd.append('reason', reasonEl ? reasonEl.value : '');
+			fd.append('note', noteEl ? noteEl.value : '');
+			fetch(D.ajax + '?action=koilink_app_status', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) { if (j && j.success) location.reload(); else tipEl.textContent = (j && j.data && j.data.msg) || '操作失败'; })
+				.catch(function () { tipEl.textContent = '网络错误'; });
+			return;
+		}
+		var blBtn = e.target.closest('#blacklist-btn');
+		if (blBtn) {
+			if (!confirm('确定拉黑对方？之后双方无法再互动。')) return;
+			var fd2 = new FormData();
+			fd2.append('nonce', D.status_nonce);
+			fd2.append('user_id', blBtn.getAttribute('data-user'));
+			fd2.append('state', 'on');
+			fetch(D.ajax + '?action=koilink_blacklist', { method: 'POST', credentials: 'same-origin', body: fd2 })
+				.then(function (r) { return r.json(); })
+				.then(function (j) { if (j && j.success) location.reload(); });
+		}
+	});
 })();
