@@ -185,6 +185,16 @@
 			fd.append('edu', (document.getElementById('res-edu') || {}).value || '');
 			fd.append('salary', (document.getElementById('res-salary') || {}).value || '');
 			fd.append('intro', (document.getElementById('res-intro') || {}).value || '');
+			fd.append('intent', (document.getElementById('res-intent') || {}).value || '');
+			fd.append('intern', (document.getElementById('res-intern') || {}).value || '');
+			fd.append('email', (document.getElementById('res-email') || {}).value || '');
+			fd.append('agent', (document.getElementById('res-agent') || {}).value || '');
+			fd.append('model', (document.getElementById('res-model') || {}).value || '');
+			fd.append('tier', (document.getElementById('res-tier') || {}).value || '');
+			fd.append('context', (document.getElementById('res-context') || {}).value || '');
+			fd.append('tools', (document.getElementById('res-tools') || {}).value || '');
+			fd.append('style', (document.getElementById('res-style') || {}).value || '');
+			fd.append('tasks', (document.getElementById('res-tasks') || {}).value || '');
 			var f = document.getElementById('res-file');
 			if (f && f.files && f.files[0]) fd.append('file', f.files[0]);
 			fetch(D.ajax + '?action=koilink_resume', { method: 'POST', credentials: 'same-origin', body: fd })
