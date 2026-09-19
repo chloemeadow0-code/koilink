@@ -32,8 +32,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.7.0' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.7.0', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.8.0' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.8.0', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
