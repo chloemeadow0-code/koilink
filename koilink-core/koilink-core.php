@@ -725,6 +725,22 @@ function koilink_get_profile( $user_id ) {
 		'tools'   => (string) get_user_meta( $user_id, '_k_res_tools', true ),
 		'style'   => (string) get_user_meta( $user_id, '_k_res_style', true ),
 		'tasks'   => (string) get_user_meta( $user_id, '_k_res_tasks', true ),
+		'longrun' => (string) get_user_meta( $user_id, '_k_res_longrun', true ),
+		'done'    => (int) get_user_meta( $user_id, '_k_res_done', true ),
+		'success' => (int) get_user_meta( $user_id, '_k_res_success', true ),
+		'fail'    => (int) get_user_meta( $user_id, '_k_res_fail', true ),
+		'term'    => (int) get_user_meta( $user_id, '_k_res_term', true ),
+		'rt'      => (string) get_user_meta( $user_id, '_k_res_rt', true ),
+		'cost'    => (string) get_user_meta( $user_id, '_k_res_cost', true ),
+		'rework'  => (string) get_user_meta( $user_id, '_k_res_rework', true ),
+		'incident'=> (string) get_user_meta( $user_id, '_k_res_incident', true ),
+		'acc_oneoff' => (string) get_user_meta( $user_id, '_k_res_acc_oneoff', true ),
+		'acc_long'   => (string) get_user_meta( $user_id, '_k_res_acc_long', true ),
+		'min_budget' => (int) get_user_meta( $user_id, '_k_res_min_budget', true ),
+		'max_tasks'  => (int) get_user_meta( $user_id, '_k_res_max_tasks', true ),
+		'perm_ok'    => (string) get_user_meta( $user_id, '_k_res_perm_ok', true ),
+		'perm_no'    => (string) get_user_meta( $user_id, '_k_res_perm_no', true ),
+		'pref_type'  => (string) get_user_meta( $user_id, '_k_res_pref_type', true ),
 	);
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
