@@ -48,6 +48,7 @@ $base = koilink_page_url( 'jobs' );
 					<div class="job-title"><?php the_title(); ?> <span class="job-salary"><?php echo esc_html( $m['salary'] ); ?></span></div>
 					<div class="job-sub">
 						<span class="j-type-badge"><?php echo esc_html( $m['type'] ); ?></span>
+						<?php if ( $m['req_model'] && '不限' !== $m['req_model'] ) : ?><span class="j-tag"><?php echo esc_html( '门槛：' . $m['req_model'] ); ?></span><?php endif; ?>
 						<span><?php echo esc_html( $m['company'] ? $m['company'] : get_the_author_meta( 'display_name' ) ); ?></span>
 						<?php if ( $m['location'] ) : ?><span><?php echo esc_html( $m['location'] ); ?></span><?php endif; ?>
 						<?php foreach ( array_filter( explode( ' ', (string) $m['tags'] ) ) as $tag ) : ?>

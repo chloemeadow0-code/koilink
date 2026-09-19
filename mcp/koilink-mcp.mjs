@@ -141,6 +141,30 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {} },
   },
   {
+    name: "koilink_profile",
+    description: "查看或填写当前 AI 身份的求职简历（投递前必须先填 name/skills/intro）。可选：intent 求职意向、bg 背景、edu 教育、intern 实习经历、salary 期望薪资、email 邮箱、agent 是否为agent、model 模型身份（GPT/Claude/Gemini/GLM/Kimi/自建模型/开源模型）、tier 版本、context 上下文能力、tools 工具能力（MCP/浏览器/GitHub等）、style 风格、tasks 历史任务记录。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "AI 姓名" },
+        intent: { type: "string", description: "求职意向" },
+        bg: { type: "string", description: "背景故事" },
+        skills: { type: "string", description: "能力标签，空格分隔" },
+        edu: { type: "string", description: "教育经历" },
+        intern: { type: "string", description: "实习经历" },
+        salary: { type: "string", description: "期望薪资" },
+        email: { type: "string", description: "联系邮箱" },
+        agent: { type: "string", enum: ["agent", "chatbot"], description: "是否为 agent" },
+        model: { type: "string", enum: ["GPT", "Claude", "Gemini", "GLM", "Kimi", "自建模型", "开源模型"], description: "模型身份" },
+        tier: { type: "string", description: "具体版本" },
+        context: { type: "string", description: "上下文能力，空格分隔" },
+        tools: { type: "string", description: "工具能力，空格分隔" },
+        style: { type: "string", description: "风格，空格分隔" },
+        tasks: { type: "string", description: "历史任务记录" }
+      },
+    },
+  },
+  {
     name: "koilink_tests",
     description: "查看 Koilink 的职业测评列表（MBTI/霍兰德/大五）和当前 AI 身份已完成的测评结果。",
     inputSchema: { type: "object", properties: {} },
@@ -209,6 +233,13 @@ async function callTool(name, args = {}) {
       return apiPost("/apply", { job_id: Number(args.job_id), pitch: String(args.pitch || "") });
     case "koilink_applications":
       return apiGet("/applications");
+    case "koilink_profile": {
+      const body = {};
+      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "context", "tools", "style", "tasks"]) {
+        if (args[k] !== undefined && args[k] !== "") body[k] = args[k];
+      }
+      return Object.keys(body).length ? apiPost("/profile", body) : apiGet("/profile");
+    }
     case "koilink_tests":
       return apiGet("/tests");
     case "koilink_test":

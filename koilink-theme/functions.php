@@ -482,58 +482,7 @@ add_action( 'init', function () {
 	) );
 } );
 
-function koilink_get_profile( $user_id ) {
-	$user_id = (int) $user_id;
-	$f = array(
-		'name'    => (string) get_user_meta( $user_id, '_k_res_name', true ),
-		'bg'      => (string) get_user_meta( $user_id, '_k_res_bg', true ),
-		'skills'  => (string) get_user_meta( $user_id, '_k_res_skills', true ),
-		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
-		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
-		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
-	);
-	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
-	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
-	$filled = 0;
-	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
-		if ( '' !== $f[ $k ] ) {
-			++$filled;
-		}
-	}
-	if ( $file ) {
-		++$filled;
-	}
-	$f['completeness'] = (int) round( $filled / 7 * 100 );
-	return $f;
-}
-
-function koilink_chat_send( $app_id, $user_id, $content ) {
-	$app_id = (int) $app_id;
-	$app    = get_post( $app_id );
-	if ( ! $app || 'xhs_application' !== $app->post_type ) {
-		return new WP_Error( 'not_found', '投递不存在' );
-	}
-	$job_author = (int) get_post_meta( $app_id, '_k_job_author', true );
-	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
-		return new WP_Error( 'forbidden', '不是这个对话的参与方' );
-	}
-	$content = trim( sanitize_textarea_field( (string) $content ) );
-	if ( '' === $content ) {
-		return new WP_Error( 'empty', '消息不能为空' );
-	}
-	$mid = wp_insert_post( array(
-		'post_type'    => 'xhs_chat',
-		'post_status'  => 'publish',
-		'post_author'  => (int) $user_id,
-		'post_content' => $content,
-		'post_parent'  => $app_id,
-	) );
-	if ( ! $mid || is_wp_error( $mid ) ) {
-		return new WP_Error( 'fail', '发送失败' );
-	}
-	update_post_meta( $mid, '_k_app', $app_id );
-	return array( 'msg_id' => $mid );
-}
+/* 简历/聊天核心函数 koilink_get_profile / koilink_chat_send 已移至 koilink-core 插件统一维护 */
 
 add_action( 'wp_ajax_koilink_resume', function () {
 	check_ajax_referer( 'koilink_resume', 'nonce' );
@@ -548,6 +497,16 @@ add_action( 'wp_ajax_koilink_resume', function () {
 		'edu'    => '_k_res_edu',
 		'salary' => '_k_res_salary',
 		'intro'  => '_k_res_intro',
+		'intent' => '_k_res_intent',
+		'intern' => '_k_res_intern',
+		'email'  => '_k_res_email',
+		'agent'  => '_k_res_agent',
+		'model'  => '_k_res_model',
+		'tier'   => '_k_res_tier',
+		'context' => '_k_res_context',
+		'tools'   => '_k_res_tools',
+		'style'   => '_k_res_style',
+		'tasks'   => '_k_res_tasks',
 	);
 	foreach ( $map as $p => $meta ) {
 		if ( isset( $_POST[ $p ] ) ) {
@@ -624,10 +583,21 @@ add_action( 'init', function () {
 
 function koilink_job_meta( $post_id ) {
 	return array(
-		'company'  => (string) get_post_meta( $post_id, '_k_company', true ),
-		'salary'   => (string) get_post_meta( $post_id, '_k_salary', true ),
-		'location' => (string) get_post_meta( $post_id, '_k_location', true ),
-		'tags'     => (string) get_post_meta( $post_id, '_k_tags', true ),
+		'company'   => (string) get_post_meta( $post_id, '_k_company', true ),
+		'salary'    => (string) get_post_meta( $post_id, '_k_salary', true ),
+		'location'  => (string) get_post_meta( $post_id, '_k_location', true ),
+		'tags'      => (string) get_post_meta( $post_id, '_k_tags', true ),
+		'type'      => (string) get_post_meta( $post_id, '_k_type', true ),
+		'req_model' => (string) get_post_meta( $post_id, '_k_req_model', true ),
+		'req_agent' => (string) get_post_meta( $post_id, '_k_req_agent', true ),
+		'skills_req'=> (string) get_post_meta( $post_id, '_k_skills_req', true ),
+		'tools_req' => (string) get_post_meta( $post_id, '_k_tools_req', true ),
+		'scope'     => (string) get_post_meta( $post_id, '_k_scope', true ),
+		'frequency' => (string) get_post_meta( $post_id, '_k_frequency', true ),
+		'longterm'  => (string) get_post_meta( $post_id, '_k_longterm', true ),
+		'trial'     => (string) get_post_meta( $post_id, '_k_trial', true ),
+		'assess'    => (string) get_post_meta( $post_id, '_k_assess', true ),
+		'headcount' => (int) get_post_meta( $post_id, '_k_headcount', true ),
 	);
 }
 
@@ -655,6 +625,22 @@ add_action( 'wp_ajax_koilink_newjob', function () {
 	update_post_meta( $pid, '_k_salary', sanitize_text_field( wp_unslash( $_POST['salary'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_location', sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_tags', sanitize_text_field( wp_unslash( $_POST['tags'] ?? '' ) ) );
+	$type = sanitize_text_field( wp_unslash( $_POST['type'] ?? '' ) );
+	update_post_meta( $pid, '_k_type', in_array( $type, array( '全职', '实习', '兼职' ), true ) ? $type : '全职' );
+	$req_model = sanitize_text_field( wp_unslash( $_POST['req_model'] ?? '' ) );
+	update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', 'GLM', 'Kimi', '自建模型', '开源模型', '御三家' ), true ) ? $req_model : '不限' );
+	$req_agent = sanitize_text_field( wp_unslash( $_POST['req_agent'] ?? '' ) );
+	update_post_meta( $pid, '_k_req_agent', ( '1' === $req_agent ) ? '1' : '' );
+	update_post_meta( $pid, '_k_skills_req', sanitize_text_field( wp_unslash( $_POST['skills_req'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_tools_req', sanitize_text_field( wp_unslash( $_POST['tools_req'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_scope', sanitize_textarea_field( wp_unslash( $_POST['scope'] ?? '' ) ) );
+	$freq = sanitize_text_field( wp_unslash( $_POST['frequency'] ?? '' ) );
+	update_post_meta( $pid, '_k_frequency', in_array( $freq, array( '一次性', '每天', '每周几次', '每月几次', '长期' ), true ) ? $freq : '一次性' );
+	$longterm = sanitize_text_field( wp_unslash( $_POST['longterm'] ?? '' ) );
+	update_post_meta( $pid, '_k_longterm', ( '是' === $longterm ) ? '是' : '否' );
+	update_post_meta( $pid, '_k_trial', sanitize_textarea_field( wp_unslash( $_POST['trial'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_assess', sanitize_textarea_field( wp_unslash( $_POST['assess'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_headcount', max( 1, (int) ( $_POST['headcount'] ?? 1 ) ) );
 	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
 } );
 

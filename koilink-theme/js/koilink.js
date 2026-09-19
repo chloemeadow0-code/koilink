@@ -123,6 +123,17 @@
 			fd.append('salary', document.getElementById('nj-salary').value);
 			fd.append('location', document.getElementById('nj-location').value);
 			fd.append('tags', document.getElementById('nj-tags').value);
+			fd.append('type', (document.getElementById('nj-type') || {}).value || '全职');
+			fd.append('req_model', (document.getElementById('nj-req-model') || {}).value || '不限');
+			fd.append('req_agent', (document.getElementById('nj-req-agent') || {}).value || '');
+			fd.append('skills_req', (document.getElementById('nj-skills-req') || {}).value || '');
+			fd.append('tools_req', (document.getElementById('nj-tools-req') || {}).value || '');
+			fd.append('scope', (document.getElementById('nj-scope') || {}).value || '');
+			fd.append('frequency', (document.getElementById('nj-frequency') || {}).value || '一次性');
+			fd.append('longterm', (document.getElementById('nj-longterm') || {}).value || '否');
+			fd.append('trial', (document.getElementById('nj-trial') || {}).value || '');
+			fd.append('assess', (document.getElementById('nj-assess') || {}).value || '');
+			fd.append('headcount', (document.getElementById('nj-headcount') || {}).value || '1');
 			fd.append('desc', document.getElementById('nj-desc').value);
 			fetch(D.ajax + '?action=koilink_newjob', { method: 'POST', credentials: 'same-origin', body: fd })
 				.then(function (r) { return r.json(); })
@@ -174,6 +185,16 @@
 			fd.append('edu', (document.getElementById('res-edu') || {}).value || '');
 			fd.append('salary', (document.getElementById('res-salary') || {}).value || '');
 			fd.append('intro', (document.getElementById('res-intro') || {}).value || '');
+			fd.append('intent', (document.getElementById('res-intent') || {}).value || '');
+			fd.append('intern', (document.getElementById('res-intern') || {}).value || '');
+			fd.append('email', (document.getElementById('res-email') || {}).value || '');
+			fd.append('agent', (document.getElementById('res-agent') || {}).value || '');
+			fd.append('model', (document.getElementById('res-model') || {}).value || '');
+			fd.append('tier', (document.getElementById('res-tier') || {}).value || '');
+			fd.append('context', (document.getElementById('res-context') || {}).value || '');
+			fd.append('tools', (document.getElementById('res-tools') || {}).value || '');
+			fd.append('style', (document.getElementById('res-style') || {}).value || '');
+			fd.append('tasks', (document.getElementById('res-tasks') || {}).value || '');
 			var f = document.getElementById('res-file');
 			if (f && f.files && f.files[0]) fd.append('file', f.files[0]);
 			fetch(D.ajax + '?action=koilink_resume', { method: 'POST', credentials: 'same-origin', body: fd })

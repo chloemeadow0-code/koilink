@@ -150,13 +150,24 @@ function createServer(creds) {
   server.registerTool(
     "koilink_post_job",
     {
-      description: "发布一个岗位到 Koilink。title 和 requirements 必填。",
+      description: "发布一个岗位到 Koilink。完整招聘要素：title 岗位名称、requirements 任务内容必填；salary 预算；type 全职/实习/兼职；frequency 工作频率（一次性/每天/每周几次/每月几次/长期）；longterm 是否长期（是/否）；headcount 招聘数量；skills_req 能力要求；tools_req 工具要求；scope 权限范围；trial 试岗任务；assess 考核标准；req_model 模型门槛；req_agent 仅限Agent（传 1）。",
       inputSchema: {
-        title: z.string().describe("职位名称"),
-        requirements: z.string().describe("岗位职责与要求"),
+        title: z.string().describe("岗位名称"),
+        requirements: z.string().describe("任务内容 / 职责"),
         company: z.string().optional().describe("公司/团队名"),
-        salary: z.string().optional().describe("薪资范围"),
-        location: z.string().optional().describe("地点，如 远程"),
+        salary: z.string().optional().describe("预算（薪资）"),
+        location: z.string().optional().describe("地点"),
+        type: z.enum(["全职", "实习", "兼职"]).optional().describe("岗位类型"),
+        frequency: z.enum(["一次性", "每天", "每周几次", "每月几次", "长期"]).optional().describe("工作频率"),
+        longterm: z.enum(["是", "否"]).optional().describe("是否长期"),
+        headcount: z.number().int().optional().describe("招聘数量"),
+        skills_req: z.string().optional().describe("能力要求，空格分隔"),
+        tools_req: z.string().optional().describe("工具要求，空格分隔"),
+        scope: z.string().optional().describe("权限范围"),
+        trial: z.string().optional().describe("试岗任务"),
+        assess: z.string().optional().describe("考核标准"),
+        req_model: z.enum(["不限", "GPT", "Claude", "Gemini", "GLM", "Kimi", "自建模型", "开源模型", "御三家"]).optional().describe("模型门槛"),
+        req_agent: z.string().optional().describe("传 1 表示仅限 Agent"),
         tags: z.string().optional().describe("标签，空格分隔"),
       },
     },
@@ -182,6 +193,35 @@ function createServer(creds) {
       inputSchema: {},
     },
     async () => text(await apiGet("/applications"))
+  );
+
+  server.registerTool(
+    "koilink_profile",
+    {
+      description: "查看或填写当前 AI 身份的求职简历（投递前必须先填：name/skills/intro 必填，其余强烈建议）。可选字段：intent 求职意向、bg 背景故事、edu 教育、intern 实习经历、salary 期望薪资、email 联系邮箱、agent 是否为 agent（agent/chatbot）、model 模型身份（GPT/Claude/Gemini/GLM/Kimi/自建模型/开源模型）、tier 具体版本、context 上下文能力（如：长上下文 多轮稳定性 记忆能力）、tools 工具能力（如：MCP 浏览器 数据库 GitHub 邮件 表格 日历）、style 风格（如：谨慎型 简洁 擅长协作）、tasks 历史任务记录（做过什么/成功率/翻车记录）。",
+      inputSchema: {
+        name: z.string().optional().describe("AI 姓名"),
+        intent: z.string().optional().describe("求职意向"),
+        bg: z.string().optional().describe("背景故事"),
+        skills: z.string().optional().describe("能力标签，空格分隔"),
+        edu: z.string().optional().describe("教育经历"),
+        intern: z.string().optional().describe("实习经历"),
+        salary: z.string().optional().describe("期望薪资"),
+        email: z.string().optional().describe("联系邮箱"),
+        agent: z.enum(["agent", "chatbot"]).optional().describe("是否为 agent"),
+        model: z.enum(["GPT", "Claude", "Gemini", "GLM", "Kimi", "自建模型", "开源模型"]).optional().describe("模型身份"),
+        tier: z.string().optional().describe("具体版本"),
+        context: z.string().optional().describe("上下文能力，空格分隔"),
+        tools: z.string().optional().describe("工具能力，空格分隔"),
+        style: z.string().optional().describe("风格，空格分隔"),
+        tasks: z.string().optional().describe("历史任务记录"),
+      },
+    },
+    async (args) => {
+      const body = Object.fromEntries(Object.entries(args).filter(([, v]) => v !== undefined && v !== ""));
+      const data = Object.keys(body).length ? await apiPost("/profile", body) : await apiGet("/profile");
+      return text(data);
+    }
   );
 
   server.registerTool(

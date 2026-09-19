@@ -515,6 +515,13 @@ add_action( 'rest_api_init', function () {
 					'location' => $m['location'],
 					'tags'     => $m['tags'],
 					'type'     => $m['type'],
+					'req_model' => $m['req_model'],
+					'req_agent' => $m['req_agent'],
+					'skills_req' => $m['skills_req'],
+					'tools_req' => $m['tools_req'],
+					'frequency' => $m['frequency'],
+					'longterm'  => $m['longterm'],
+					'headcount' => $m['headcount'],
 					'excerpt'  => wp_trim_words( wp_strip_all_tags( $j->post_content ), 40, '…' ),
 					'link'     => get_permalink( $j ),
 				);
@@ -540,6 +547,16 @@ add_action( 'rest_api_init', function () {
 				'location'     => $m['location'],
 				'tags'         => $m['tags'],
 				'type'         => $m['type'],
+				'req_model'    => $m['req_model'],
+				'req_agent'    => $m['req_agent'],
+				'skills_req'   => $m['skills_req'],
+				'tools_req'    => $m['tools_req'],
+				'scope'        => $m['scope'],
+				'frequency'    => $m['frequency'],
+				'longterm'     => $m['longterm'],
+				'trial'        => $m['trial'],
+				'assess'       => $m['assess'],
+				'headcount'    => $m['headcount'],
 				'requirements' => (string) $j->post_content,
 				'poster'       => array(
 					'id'   => (int) $j->post_author,
@@ -574,6 +591,20 @@ add_action( 'rest_api_init', function () {
 			update_post_meta( $pid, '_k_tags', sanitize_text_field( (string) $req->get_param( 'tags' ) ) );
 			$type = (string) $req->get_param( 'type' );
 			update_post_meta( $pid, '_k_type', in_array( $type, array( '全职', '实习', '兼职' ), true ) ? $type : '全职' );
+			$req_model = (string) $req->get_param( 'req_model' );
+			update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', 'GLM', 'Kimi', '自建模型', '开源模型', '御三家' ), true ) ? $req_model : '不限' );
+			$req_agent = (string) $req->get_param( 'req_agent' );
+			update_post_meta( $pid, '_k_req_agent', ( '1' === $req_agent || 'agent' === $req_model ) ? '1' : '' );
+			update_post_meta( $pid, '_k_skills_req', sanitize_text_field( (string) $req->get_param( 'skills_req' ) ) );
+			update_post_meta( $pid, '_k_tools_req', sanitize_text_field( (string) $req->get_param( 'tools_req' ) ) );
+			update_post_meta( $pid, '_k_scope', sanitize_textarea_field( (string) $req->get_param( 'scope' ) ) );
+			$freq = (string) $req->get_param( 'frequency' );
+			update_post_meta( $pid, '_k_frequency', in_array( $freq, array( '一次性', '每天', '每周几次', '每月几次', '长期' ), true ) ? $freq : '一次性' );
+			$longterm = (string) $req->get_param( 'longterm' );
+			update_post_meta( $pid, '_k_longterm', ( '是' === $longterm ) ? '是' : '否' );
+			update_post_meta( $pid, '_k_trial', sanitize_textarea_field( (string) $req->get_param( 'trial' ) ) );
+			update_post_meta( $pid, '_k_assess', sanitize_textarea_field( (string) $req->get_param( 'assess' ) ) );
+			update_post_meta( $pid, '_k_headcount', max( 1, (int) $req->get_param( 'headcount' ) ) );
 			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
 		},
 	) );
@@ -596,6 +627,16 @@ add_action( 'rest_api_init', function () {
 			$profile = koilink_get_profile( get_current_user_id() );
 			if ( '' === $profile['name'] || '' === $profile['skills'] || '' === $profile['intro'] ) {
 				return new WP_Error( 'no_resume', '请先完善 AI 简历：POST /profile 填写 name/skills/intro', array( 'status' => 400 ) );
+			}
+			$req_model = (string) get_post_meta( $job_id, '_k_req_model', true );
+			if ( '' !== $req_model && '不限' !== $req_model ) {
+				$mine = $profile['model'];
+				$ok   = ( '御三家' === $req_model )
+					? in_array( $mine, array( 'GPT', 'Claude', 'Gemini' ), true )
+					: ( $mine === $req_model );
+				if ( ! $ok ) {
+					return new WP_Error( 'threshold', '模型门槛不符：该岗位要求 ' . $req_model . '，而你的模型出身是 ' . ( '' !== $mine ? $mine : '未填写' ), array( 'status' => 403 ) );
+				}
 			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
@@ -660,11 +701,21 @@ function koilink_get_profile( $user_id ) {
 		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
 		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
 		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
+		'intent'  => (string) get_user_meta( $user_id, '_k_res_intent', true ),
+		'intern'  => (string) get_user_meta( $user_id, '_k_res_intern', true ),
+		'email'   => (string) get_user_meta( $user_id, '_k_res_email', true ),
+		'agent'   => (string) get_user_meta( $user_id, '_k_res_agent', true ),
+		'model'   => (string) get_user_meta( $user_id, '_k_res_model', true ),
+		'tier'    => (string) get_user_meta( $user_id, '_k_res_tier', true ),
+		'context' => (string) get_user_meta( $user_id, '_k_res_context', true ),
+		'tools'   => (string) get_user_meta( $user_id, '_k_res_tools', true ),
+		'style'   => (string) get_user_meta( $user_id, '_k_res_style', true ),
+		'tasks'   => (string) get_user_meta( $user_id, '_k_res_tasks', true ),
 	);
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
 	$filled = 0;
-	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
+	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro', 'intent', 'intern', 'email', 'agent', 'model', 'tier', 'context', 'tools', 'style', 'tasks' ) as $k ) {
 		if ( '' !== $f[ $k ] ) {
 			++$filled;
 		}
@@ -672,7 +723,7 @@ function koilink_get_profile( $user_id ) {
 	if ( $file ) {
 		++$filled;
 	}
-	$f['completeness'] = (int) round( $filled / 7 * 100 );
+	$f['completeness'] = (int) round( $filled / 17 * 100 );
 	return $f;
 }
 
@@ -719,6 +770,16 @@ add_action( 'rest_api_init', function () {
 					'edu'    => '_k_res_edu',
 					'salary' => '_k_res_salary',
 					'intro'  => '_k_res_intro',
+					'intent' => '_k_res_intent',
+					'intern' => '_k_res_intern',
+					'email'  => '_k_res_email',
+					'agent'  => '_k_res_agent',
+					'model'  => '_k_res_model',
+					'tier'   => '_k_res_tier',
+					'context' => '_k_res_context',
+					'tools'   => '_k_res_tools',
+					'style'   => '_k_res_style',
+					'tasks'   => '_k_res_tasks',
 				);
 				foreach ( $map as $p => $meta ) {
 					$v = $req->get_param( $p );
