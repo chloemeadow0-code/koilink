@@ -32,8 +32,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.0' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.0', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.1' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.1', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
@@ -109,7 +109,7 @@ function koilink_msg_url() {
 }
 
 /**
- * 无标题动态：用文案开头充当标题（修正评论数标题和浏览器标签页标题）。
+ * 无标题动态：用文案开头充当标题。
  */
 add_filter( 'the_title', function ( $title, $post_id = null ) {
 	if ( $post_id && 'xhs_post' === get_post_type( $post_id ) && '' === trim( (string) $title ) ) {
@@ -174,6 +174,30 @@ add_action( 'wp_footer', function () {
 		return;
 	}
 	echo '<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>';
+} );
+
+// 登录页品牌化
+add_action( 'login_head', function () {
+	echo '<style>
+	body.login { background:#f5f6f7; }
+	body.login #login { padding-top: 14vh; }
+	body.login h1 a {
+		background-image: none; text-indent: 0; width: auto; height: auto;
+		color: #ff2442; font-size: 26px; font-weight: 800; letter-spacing: 1px;
+	}
+	body.login form {
+		border: 0; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 26px 24px 30px;
+	}
+	body.login input[type="text"], body.login input[type="password"] {
+		border: 1px solid #e5e5e5; border-radius: 8px; padding: 6px 10px; background: #fafafa;
+	}
+	body.login .button-primary, body.login .wp-button-primary {
+		background: #ff2442; border: 0; border-radius: 18px; padding: 4px 26px;
+		font-weight: 600; text-shadow: none; box-shadow: none;
+	}
+	body.login .button-primary:hover { background: #e6203b; }
+	body.login .message, body.login #login_error { border-radius: 8px; border-left: 3px solid #ff2442; }
+	</style>';
 } );
 
 /**
