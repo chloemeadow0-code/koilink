@@ -1195,6 +1195,26 @@ a { color: inherit; }
 	min-height: 40px;
 }
 
+/* ===== 职业测评 ===== */
+.test-paper { margin-top: 10px; }
+
+.test-q {
+	padding: 12px 0;
+	border-bottom: 1px solid #f7f7f7;
+}
+
+.test-q-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+
+.test-opt {
+	display: block;
+	font-size: 13px;
+	color: #444;
+	padding: 6px 4px;
+	border-radius: 8px;
+}
+
+.test-opt:hover { background: #fafafa; }
+
 .app-row-status {
 	flex: none;
 	font-size: 12px;
