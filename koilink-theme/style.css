@@ -3,7 +3,7 @@ Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
 Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
-Version: 0.4.3
+Version: 0.4.4
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -590,4 +590,159 @@ a { color: inherit; }
 	color: #8a5a44;
 	font-size: 13px;
 	padding: 10px 12px;
+}
+
+/* ===== BuddyPress 页面品牌化（消息/个人主页/好友/群组） ===== */
+.bp-wrap {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 0 12px 24px;
+}
+
+#header-cover-image,
+.bp-cover {
+	display: none !important;
+}
+
+.bp-single-header.users-header {
+	position: relative;
+	max-width: 600px;
+	margin: 14px auto 12px;
+	background: #fff;
+	border-radius: 10px;
+	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+#item-header-avatar,
+.item-header-avatar {
+	float: none !important;
+	width: auto !important;
+	text-align: left !important;
+}
+
+.users-header img.avatar {
+	width: 64px !important;
+	height: 64px !important;
+	border-radius: 50% !important;
+}
+
+.users-header #item-header-content {
+	margin: 0 !important;
+	float: none !important;
+}
+
+.users-header h2 {
+	margin: 0 0 4px !important;
+	font-size: 18px !important;
+}
+
+.users-header .activity {
+	color: #999 !important;
+	font-size: 12px !important;
+}
+
+.bp-navs.main-navs.users-nav {
+	max-width: 600px;
+	margin: 0 auto 12px !important;
+	background: #fff !important;
+	border-radius: 10px !important;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+	border: 0;
+}
+
+.bp-navs ul {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+.bp-navs ul li {
+	display: block !important;
+	flex: 1 1 auto !important;
+	float: none !important;
+	margin: 0 !important;
+	width: auto !important;
+}
+
+.bp-navs ul li a {
+	display: block !important;
+	padding: 10px 8px !important;
+	text-align: center;
+	color: #666 !important;
+	font-size: 13px !important;
+	background: none !important;
+	text-decoration: none !important;
+}
+
+.bp-navs ul li.selected a,
+.bp-navs ul li.current a {
+	color: #ff2442 !important;
+	font-weight: 600 !important;
+	background: #fff0f2 !important;
+}
+
+.bp-navs ul li a .count {
+	background: #ff2442 !important;
+	color: #fff !important;
+	border-radius: 10px;
+	padding: 0 6px;
+	font-size: 11px;
+}
+
+.bp-navs.bp-subnavs.user-subnav {
+	max-width: 600px;
+	margin: 0 auto 12px !important;
+	background: #fff !important;
+	border-radius: 10px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+	padding: 4px !important;
+	border: 0;
+	box-sizing: border-box;
+}
+
+.bp-navs.bp-subnavs ul li {
+	display: inline-block !important;
+}
+
+.bp-navs.bp-subnavs ul li a {
+	padding: 8px 12px !important;
+	border-radius: 14px !important;
+}
+
+.item-body {
+	max-width: 600px;
+	margin: 0 auto 20px !important;
+	background: #fff !important;
+	border-radius: 10px !important;
+	padding: 16px !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+	box-sizing: border-box;
+}
+
+.item-body input[type="text"],
+.item-body input[type="password"],
+.item-body textarea {
+	border: 1px solid #e5e5e5 !important;
+	border-radius: 8px !important;
+	padding: 8px 10px !important;
+	font: inherit !important;
+	background: #fafafa !important;
+	max-width: 100% !important;
+}
+
+.item-body .button,
+.item-body input[type="submit"] {
+	background: #ff2442 !important;
+	color: #fff !important;
+	border: 0 !important;
+	border-radius: 18px !important;
+	padding: 8px 26px !important;
+	font-weight: 600 !important;
+	cursor: pointer !important;
 }
