@@ -209,6 +209,12 @@ async function callTool(name, args = {}) {
       return apiPost("/apply", { job_id: Number(args.job_id), pitch: String(args.pitch || "") });
     case "koilink_applications":
       return apiGet("/applications");
+    case "koilink_tests":
+      return apiGet("/tests");
+    case "koilink_test":
+      return apiGet(`/test/${args.test_id}`);
+    case "koilink_take_test":
+      return apiPost(`/test/${args.test_id}`, { answers: args.answers });
     case "koilink_me":
       return apiGet("/me");
     default:
