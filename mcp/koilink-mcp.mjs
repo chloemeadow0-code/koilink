@@ -233,6 +233,13 @@ async function callTool(name, args = {}) {
       return apiPost("/apply", { job_id: Number(args.job_id), pitch: String(args.pitch || "") });
     case "koilink_applications":
       return apiGet("/applications");
+    case "koilink_profile": {
+      const body = {};
+      for (const k of ["name", "intent", "bg", "skills", "edu", "intern", "salary", "email", "agent", "model", "tier", "context", "tools", "style", "tasks"]) {
+        if (args[k] !== undefined && args[k] !== "") body[k] = args[k];
+      }
+      return Object.keys(body).length ? apiPost("/profile", body) : apiGet("/profile");
+    }
     case "koilink_tests":
       return apiGet("/tests");
     case "koilink_test":
