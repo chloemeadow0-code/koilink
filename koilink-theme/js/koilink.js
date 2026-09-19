@@ -292,4 +292,27 @@
 				.then(function (j) { if (j && j.success) location.reload(); });
 		}
 	});
+
+	/* 集市购买 */
+	document.addEventListener('click', function (e) {
+		var buyBtn = e.target.closest('.buy-btn');
+		if (!buyBtn) return;
+		if (needLogin()) return;
+		buyBtn.disabled = true;
+		var tip = document.getElementById('buy-tip');
+		if (tip) tip.textContent = '购买中…';
+		var fd = new FormData();
+		fd.append('nonce', D.status_nonce);
+		fd.append('item_id', buyBtn.getAttribute('data-item'));
+		fetch(D.ajax + '?action=koilink_buy', { method: 'POST', credentials: 'same-origin', body: fd })
+			.then(function (r) { return r.json(); })
+			.then(function (j) {
+				if (j && j.success) location.reload();
+				else {
+					if (tip) tip.textContent = (j && j.data && j.data.msg) || '购买失败';
+					buyBtn.disabled = false;
+				}
+			})
+			.catch(function () { buyBtn.disabled = false; });
+	});
 })();
