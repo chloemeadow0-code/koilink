@@ -460,3 +460,93 @@ add_action( 'wp_ajax_koilink_like', function () {
 	update_post_meta( $pid, '_koilink_likes', $likes );
 	wp_send_json_success( array( 'count' => count( $likes ), 'state' => $state ) );
 } );
+
+/* -------------------------------------------------------------------------
+ * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
+ * ---------------------------------------------------------------------- */
+
+add_action( 'init', function () {
+	register_post_type( 'xhs_job', array(
+		'labels'       => array( 'name' => '岗位', 'singular_name' => '岗位' ),
+		'public'       => true,
+		'supports'     => array( 'title', 'editor', 'author' ),
+		'has_archive'  => false,
+		'rewrite'      => array( 'slug' => 'job' ),
+		'show_in_rest' => true,
+		'menu_icon'    => 'dashicons-businesswoman',
+	) );
+	register_post_type( 'xhs_application', array(
+		'labels'       => array( 'name' => '投递', 'singular_name' => '投递' ),
+		'public'       => false,
+		'show_ui'      => true,
+		'supports'     => array( 'title', 'editor', 'author' ),
+		'menu_icon'    => 'dashicons-email-alt',
+	) );
+} );
+
+function koilink_job_meta( $post_id ) {
+	return array(
+		'company'  => (string) get_post_meta( $post_id, '_k_company', true ),
+		'salary'   => (string) get_post_meta( $post_id, '_k_salary', true ),
+		'location' => (string) get_post_meta( $post_id, '_k_location', true ),
+		'tags'     => (string) get_post_meta( $post_id, '_k_tags', true ),
+	);
+}
+
+add_action( 'wp_ajax_koilink_newjob', function () {
+	check_ajax_referer( 'koilink_newjob', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$title = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+	$desc  = sanitize_textarea_field( wp_unslash( $_POST['desc'] ?? '' ) );
+	if ( '' === $title || '' === $desc ) {
+		wp_send_json_error( array( 'msg' => '职位名称和要求都要填' ) );
+	}
+	$pid = wp_insert_post( array(
+		'post_type'    => 'xhs_job',
+		'post_status'  => 'publish',
+		'post_author'  => get_current_user_id(),
+		'post_title'   => $title,
+		'post_content' => $desc,
+	) );
+	if ( ! $pid || is_wp_error( $pid ) ) {
+		wp_send_json_error( array( 'msg' => '发布失败' ) );
+	}
+	update_post_meta( $pid, '_k_company', sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_salary', sanitize_text_field( wp_unslash( $_POST['salary'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_location', sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_tags', sanitize_text_field( wp_unslash( $_POST['tags'] ?? '' ) ) );
+	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
+} );
+
+add_action( 'wp_ajax_koilink_apply', function () {
+	check_ajax_referer( 'koilink_apply', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$job_id = (int) ( $_POST['job_id'] ?? 0 );
+	$pitch  = trim( sanitize_textarea_field( wp_unslash( $_POST['pitch'] ?? '' ) ) );
+	if ( ! $job_id || 'xhs_job' !== get_post_type( $job_id ) ) {
+		wp_send_json_error( array( 'msg' => '岗位不存在' ) );
+	}
+	if ( '' === $pitch ) {
+		wp_send_json_error( array( 'msg' => '写一段自我介绍/为什么适合这个岗位' ) );
+	}
+	if ( (int) get_post_field( 'post_author', $job_id ) === get_current_user_id() ) {
+		wp_send_json_error( array( 'msg' => '不能投递自己发布的岗位' ) );
+	}
+	$aid = wp_insert_post( array(
+		'post_type'    => 'xhs_application',
+		'post_status'  => 'publish',
+		'post_author'  => get_current_user_id(),
+		'post_title'   => '投递：' . get_the_title( $job_id ),
+		'post_content' => $pitch,
+	) );
+	if ( ! $aid || is_wp_error( $aid ) ) {
+		wp_send_json_error( array( 'msg' => '投递失败' ) );
+	}
+	update_post_meta( $aid, '_k_job', $job_id );
+	update_post_meta( $aid, '_k_job_author', (int) get_post_field( 'post_author', $job_id ) );
+	wp_send_json_success( array( 'msg' => '投递成功，等招聘方查看' ) );
+} );
