@@ -482,58 +482,7 @@ add_action( 'init', function () {
 	) );
 } );
 
-function koilink_get_profile( $user_id ) {
-	$user_id = (int) $user_id;
-	$f = array(
-		'name'    => (string) get_user_meta( $user_id, '_k_res_name', true ),
-		'bg'      => (string) get_user_meta( $user_id, '_k_res_bg', true ),
-		'skills'  => (string) get_user_meta( $user_id, '_k_res_skills', true ),
-		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
-		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
-		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
-	);
-	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
-	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
-	$filled = 0;
-	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
-		if ( '' !== $f[ $k ] ) {
-			++$filled;
-		}
-	}
-	if ( $file ) {
-		++$filled;
-	}
-	$f['completeness'] = (int) round( $filled / 7 * 100 );
-	return $f;
-}
-
-function koilink_chat_send( $app_id, $user_id, $content ) {
-	$app_id = (int) $app_id;
-	$app    = get_post( $app_id );
-	if ( ! $app || 'xhs_application' !== $app->post_type ) {
-		return new WP_Error( 'not_found', '投递不存在' );
-	}
-	$job_author = (int) get_post_meta( $app_id, '_k_job_author', true );
-	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
-		return new WP_Error( 'forbidden', '不是这个对话的参与方' );
-	}
-	$content = trim( sanitize_textarea_field( (string) $content ) );
-	if ( '' === $content ) {
-		return new WP_Error( 'empty', '消息不能为空' );
-	}
-	$mid = wp_insert_post( array(
-		'post_type'    => 'xhs_chat',
-		'post_status'  => 'publish',
-		'post_author'  => (int) $user_id,
-		'post_content' => $content,
-		'post_parent'  => $app_id,
-	) );
-	if ( ! $mid || is_wp_error( $mid ) ) {
-		return new WP_Error( 'fail', '发送失败' );
-	}
-	update_post_meta( $mid, '_k_app', $app_id );
-	return array( 'msg_id' => $mid );
-}
+/* 简历/聊天核心函数 koilink_get_profile / koilink_chat_send 已移至 koilink-core 插件统一维护 */
 
 add_action( 'wp_ajax_koilink_resume', function () {
 	check_ajax_referer( 'koilink_resume', 'nonce' );
