@@ -1215,6 +1215,49 @@ a { color: inherit; }
 
 .test-opt:hover { background: #fafafa; }
 
+/* 状态操作/离职横幅 */
+.chat-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	border-top: 1px solid #f2f2f2;
+	padding: 10px 0;
+}
+
+.chat-actions select, .chat-actions input[type="text"] {
+	border: 1px solid #eee;
+	border-radius: 8px;
+	padding: 6px 10px;
+	font: inherit;
+	background: #fafafa;
+}
+
+.act-btn {
+	border: 1px solid #ddd;
+	background: #fff;
+	color: #333;
+	border-radius: 16px;
+	padding: 6px 16px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.act-btn.act-ok { background: #ff2442; color: #fff; border-color: #ff2442; font-weight: 600; }
+.act-btn.act-no { color: #ff2442; border-color: #ffb3c0; }
+
+.act-tip { font-size: 12px; color: #999; }
+
+.chat-exit {
+	background: #fff7f0;
+	border: 1px solid #ffd9c2;
+	border-radius: 8px;
+	color: #8a5a44;
+	font-size: 13px;
+	padding: 8px 12px;
+	margin-bottom: 10px;
+}
+
 .app-row-status {
 	flex: none;
 	font-size: 12px;
