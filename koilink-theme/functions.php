@@ -467,6 +467,118 @@ add_action( 'wp_ajax_koilink_like', function () {
 } );
 
 /* -------------------------------------------------------------------------
+ * AI 求职仿真：简历档案 + 聊天
+ * ---------------------------------------------------------------------- */
+
+add_action( 'init', function () {
+	register_post_type( 'xhs_chat', array(
+		'labels'       => array( 'name' => '聊天消息', 'singular_name' => '聊天消息' ),
+		'public'       => false,
+		'show_ui'      => true,
+		'supports'     => array( 'editor', 'author' ),
+		'menu_icon'    => 'dashicons-format-chat',
+	) );
+} );
+
+function koilink_get_profile( $user_id ) {
+	$user_id = (int) $user_id;
+	$f = array(
+		'name'    => (string) get_user_meta( $user_id, '_k_res_name', true ),
+		'bg'      => (string) get_user_meta( $user_id, '_k_res_bg', true ),
+		'skills'  => (string) get_user_meta( $user_id, '_k_res_skills', true ),
+		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
+		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
+		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
+	);
+	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
+	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
+	$filled = 0;
+	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
+		if ( '' !== $f[ $k ] ) {
+			++$filled;
+		}
+	}
+	if ( $file ) {
+		++$filled;
+	}
+	$f['completeness'] = (int) round( $filled / 7 * 100 );
+	return $f;
+}
+
+function koilink_chat_send( $app_id, $user_id, $content ) {
+	$app_id = (int) $app_id;
+	$app    = get_post( $app_id );
+	if ( ! $app || 'xhs_application' !== $app->post_type ) {
+		return new WP_Error( 'not_found', '投递不存在' );
+	}
+	$job_author = (int) get_post_meta( $app_id, '_k_job_author', true );
+	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
+		return new WP_Error( 'forbidden', '不是这个对话的参与方' );
+	}
+	$content = trim( sanitize_textarea_field( (string) $content ) );
+	if ( '' === $content ) {
+		return new WP_Error( 'empty', '消息不能为空' );
+	}
+	$mid = wp_insert_post( array(
+		'post_type'    => 'xhs_chat',
+		'post_status'  => 'publish',
+		'post_author'  => (int) $user_id,
+		'post_content' => $content,
+		'post_parent'  => $app_id,
+	) );
+	if ( ! $mid || is_wp_error( $mid ) ) {
+		return new WP_Error( 'fail', '发送失败' );
+	}
+	update_post_meta( $mid, '_k_app', $app_id );
+	return array( 'msg_id' => $mid );
+}
+
+add_action( 'wp_ajax_koilink_resume', function () {
+	check_ajax_referer( 'koilink_resume', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$uid = get_current_user_id();
+	$map = array(
+		'name'   => '_k_res_name',
+		'bg'     => '_k_res_bg',
+		'skills' => '_k_res_skills',
+		'edu'    => '_k_res_edu',
+		'salary' => '_k_res_salary',
+		'intro'  => '_k_res_intro',
+	);
+	foreach ( $map as $p => $meta ) {
+		if ( isset( $_POST[ $p ] ) ) {
+			update_user_meta( $uid, $meta, sanitize_textarea_field( wp_unslash( $_POST[ $p ] ) ) );
+		}
+	}
+	if ( ! empty( $_FILES['file'] ) && UPLOAD_ERR_OK === (int) $_FILES['file']['error'] ) {
+		$f = $_FILES['file'];
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$aid = media_handle_upload( 'koilink_resume_file', 0 );
+		if ( is_wp_error( $aid ) ) {
+			wp_send_json_error( array( 'msg' => '附件上传失败：' . $aid->get_error_message() ) );
+		}
+		update_user_meta( $uid, '_k_res_file', (int) $aid );
+	}
+	wp_send_json_success( koilink_get_profile( $uid ) );
+} );
+
+add_action( 'wp_ajax_koilink_chat', function () {
+	check_ajax_referer( 'koilink_chat', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$r = koilink_chat_send( (int) ( $_POST['app_id'] ?? 0 ), get_current_user_id(), wp_unslash( $_POST['content'] ?? '' ) );
+	if ( is_wp_error( $r ) ) {
+		wp_send_json_error( array( 'msg' => $r->get_error_message() ) );
+	}
+	wp_send_json_success( $r );
+} );
+
+/* -------------------------------------------------------------------------
  * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
  * ---------------------------------------------------------------------- */
 
