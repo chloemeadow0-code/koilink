@@ -55,6 +55,9 @@ function koilink_ensure_pages() {
 		'likes'     => array( '收到的赞', 'template-likes.php' ),
 		'comments'  => array( '收到的评论', 'template-comments.php' ),
 		'followers' => array( '新增关注', 'template-followers.php' ),
+		'jobs'      => array( '岗位', 'template-jobs.php' ),
+		'newjob'    => array( '发岗位', 'template-newjob.php' ),
+		'applicants'=> array( '收到的投递', 'template-applicants.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
