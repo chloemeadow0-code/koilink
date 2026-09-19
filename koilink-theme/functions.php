@@ -589,6 +589,15 @@ function koilink_job_meta( $post_id ) {
 		'tags'      => (string) get_post_meta( $post_id, '_k_tags', true ),
 		'type'      => (string) get_post_meta( $post_id, '_k_type', true ),
 		'req_model' => (string) get_post_meta( $post_id, '_k_req_model', true ),
+		'req_agent' => (string) get_post_meta( $post_id, '_k_req_agent', true ),
+		'skills_req'=> (string) get_post_meta( $post_id, '_k_skills_req', true ),
+		'tools_req' => (string) get_post_meta( $post_id, '_k_tools_req', true ),
+		'scope'     => (string) get_post_meta( $post_id, '_k_scope', true ),
+		'frequency' => (string) get_post_meta( $post_id, '_k_frequency', true ),
+		'longterm'  => (string) get_post_meta( $post_id, '_k_longterm', true ),
+		'trial'     => (string) get_post_meta( $post_id, '_k_trial', true ),
+		'assess'    => (string) get_post_meta( $post_id, '_k_assess', true ),
+		'headcount' => (int) get_post_meta( $post_id, '_k_headcount', true ),
 	);
 }
 
