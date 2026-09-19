@@ -3,7 +3,7 @@ Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
 Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
-Version: 0.4.1
+Version: 0.4.2
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -411,7 +411,7 @@ a { color: inherit; }
 }
 
 /* 注册 / 激活页（BuddyPress 表单品牌化） */
-#buddypress.bp-nouveau {
+#buddypress {
 	max-width: 560px;
 	margin: 16px auto;
 	background: #fff;
@@ -420,26 +420,26 @@ a { color: inherit; }
 	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
 }
 
-#buddypress.bp-nouveau h2,
-#buddypress.bp-nouveau h3 {
+#buddypress h2,
+#buddypress h3 {
 	font-size: 17px;
 	margin: 14px 0 10px;
 }
 
-#buddypress.bp-nouveau .bp-signup-form label,
-#buddypress.bp-nouveau .form-wrap label,
-#buddypress.bp-nouveau label {
+#buddypress .bp-signup-form label,
+#buddypress .form-wrap label,
+#buddypress label {
 	display: block;
 	font-size: 13px;
 	color: #666;
 	margin: 12px 0 4px;
 }
 
-#buddypress.bp-nouveau input[type="text"],
-#buddypress.bp-nouveau input[type="email"],
-#buddypress.bp-nouveau input[type="password"],
-#buddypress.bp-nouveau select,
-#buddypress.bp-nouveau textarea {
+#buddypress input[type="text"],
+#buddypress input[type="email"],
+#buddypress input[type="password"],
+#buddypress select,
+#buddypress textarea {
 	width: 100%;
 	border: 1px solid #e5e5e5;
 	border-radius: 8px;
@@ -448,22 +448,22 @@ a { color: inherit; }
 	background: #fafafa;
 }
 
-#buddypress.bp-nouveau input[type="text"]:focus,
-#buddypress.bp-nouveau input[type="email"]:focus,
-#buddypress.bp-nouveau input[type="password"]:focus,
-#buddypress.bp-nouveau textarea:focus {
+#buddypress input[type="text"]:focus,
+#buddypress input[type="email"]:focus,
+#buddypress input[type="password"]:focus,
+#buddypress textarea:focus {
 	border-color: #ff2442;
 	background: #fff;
 	outline: none;
 }
 
-#buddypress.bp-nouveau .submit,
-#buddypress.bp-nouveau .ac-form .submit {
+#buddypress .submit,
+#buddypress .ac-form .submit {
 	padding: 14px 0 0;
 }
 
-#buddypress.bp-nouveau .submit input[type="submit"],
-#buddypress.bp-nouveau input#signup_submit {
+#buddypress .submit input[type="submit"],
+#buddypress input#signup_submit {
 	background: #ff2442;
 	color: #fff;
 	border: 0;
@@ -475,19 +475,88 @@ a { color: inherit; }
 	cursor: pointer;
 }
 
-#buddypress.bp-nouveau .pw-strength-result,
-#buddypress.bp-nouveau #password-strength {
+#buddypress .pw-strength-result,
+#buddypress #password-strength {
 	border-radius: 6px;
 	padding: 4px 10px;
 	margin-top: 6px;
 }
 
-#buddypress.bp-nouveau .registration-quick-links,
-#buddypress.bp-nouveau .bp-messages {
+#buddypress .registration-quick-links,
+#buddypress .bp-messages {
 	border-radius: 8px;
 }
 
 /* 登录页内的提示块 */
-.cmt-login, #buddypress.bp-nouveau .bp-feedback {
+.cmt-login, #buddypress .bp-feedback {
 	font-size: 13px;
+}
+
+/* 注册页细节修正：空必填框不要红边、隐藏大写锁定巨图、强度条正常化 */
+#buddypress #register-page input[type="text"],
+#buddypress #register-page input[type="email"],
+#buddypress #register-page input[type="password"] {
+	border-color: #e5e5e5 !important;
+	background: #fafafa !important;
+	box-shadow: none !important;
+}
+
+#buddypress #register-page input[type="text"]:focus,
+#buddypress #register-page input[type="email"]:focus,
+#buddypress #register-page input[type="password"]:focus {
+	border-color: #ff2442 !important;
+	background: #fff !important;
+}
+
+#buddypress #caps-warning {
+	display: none !important;
+}
+
+#buddypress .wp-pwd .password-input-wrapper {
+	display: flex;
+	width: 100%;
+	gap: 8px;
+}
+
+#buddypress .wp-pwd .password-input-wrapper input {
+	flex: 1;
+	width: auto;
+}
+
+#buddypress .pw-weak {
+	font-size: 12px;
+	color: #999;
+	margin-top: 8px;
+}
+
+#buddypress #pass-strength-result {
+	width: 100%;
+	box-sizing: border-box;
+	background: #f5f6f7 !important;
+	border: 1px solid #eee !important;
+	border-radius: 6px;
+	padding: 5px 10px !important;
+	font-size: 12px;
+	color: #666;
+	margin-top: 8px;
+	opacity: 1;
+}
+
+#buddypress #pass-strength-result:before,
+#buddypress #pass-strength-result:after,
+#buddypress .wp-pwd:before,
+#buddypress .wp-pwd:after {
+	display: none !important;
+	content: none !important;
+	border: 0 !important;
+}
+
+#buddypress #register-page .bp-messages,
+#buddypress .bp-template-notice {
+	background: #fff7f0;
+	border: 1px solid #ffd9c2;
+	border-radius: 8px;
+	color: #8a5a44;
+	font-size: 13px;
+	padding: 10px 12px;
 }
