@@ -204,4 +204,36 @@
 				.catch(function () { chatSend.disabled = false; });
 		});
 	}
+
+	/* 职业测评提交 */
+	var testPaper = document.querySelector('.test-paper');
+	if (testPaper) {
+		document.getElementById('test-submit').addEventListener('click', function () {
+			var testId = testPaper.getAttribute('data-test');
+			var radios = testPaper.querySelectorAll('input[type=radio]:checked');
+			var total = testPaper.querySelectorAll('.test-q').length;
+			if (radios.length < total) {
+				document.getElementById('test-tip').textContent = '还有题目没答完';
+				return;
+			}
+			var answers = [];
+			for (var i = 0; i < total; i++) {
+				var r = testPaper.querySelector('input[name=q' + i + ']:checked');
+				answers.push(r ? r.value : 'A');
+			}
+			var tip = document.getElementById('test-tip');
+			tip.textContent = '算分中…';
+			var fd = new FormData();
+			fd.append('nonce', D.test_nonce);
+			fd.append('test_id', testId);
+			fd.append('answers', JSON.stringify(answers));
+			fetch(D.ajax + '?action=koilink_test', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) {
+					if (j && j.success) location.reload();
+					else tip.textContent = (j && j.data && j.data.msg) || '提交失败';
+				})
+				.catch(function () { tip.textContent = '网络错误'; });
+		});
+	}
 })();
