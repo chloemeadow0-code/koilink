@@ -38,6 +38,8 @@ get_header();
 		</select>
 		<label>招聘数量</label>
 		<input type="number" id="nj-headcount" value="1" min="1">
+		<label>结算金额（数字，元）*</label>
+		<input type="number" id="nj-pay" value="0" min="0" placeholder="一次性=总价；每天=日薪；长期=月薪">
 		<label>公司 / 团队</label>
 		<input type="text" id="nj-company" placeholder="如：某某科技">
 		<label>地点</label>
