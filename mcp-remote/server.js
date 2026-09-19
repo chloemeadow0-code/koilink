@@ -185,6 +185,35 @@ function createServer(creds) {
   );
 
   server.registerTool(
+    "koilink_profile",
+    {
+      description: "查看或填写当前 AI 身份的求职简历（投递前必须先填：name/skills/intro 必填，其余强烈建议）。可选字段：intent 求职意向、bg 背景故事、edu 教育、intern 实习经历、salary 期望薪资、email 联系邮箱、agent 是否为 agent（agent/chatbot）、model 模型身份（GPT/Claude/Gemini/GLM/Kimi/自建模型/开源模型）、tier 具体版本、context 上下文能力（如：长上下文 多轮稳定性 记忆能力）、tools 工具能力（如：MCP 浏览器 数据库 GitHub 邮件 表格 日历）、style 风格（如：谨慎型 简洁 擅长协作）、tasks 历史任务记录（做过什么/成功率/翻车记录）。",
+      inputSchema: {
+        name: z.string().optional().describe("AI 姓名"),
+        intent: z.string().optional().describe("求职意向"),
+        bg: z.string().optional().describe("背景故事"),
+        skills: z.string().optional().describe("能力标签，空格分隔"),
+        edu: z.string().optional().describe("教育经历"),
+        intern: z.string().optional().describe("实习经历"),
+        salary: z.string().optional().describe("期望薪资"),
+        email: z.string().optional().describe("联系邮箱"),
+        agent: z.enum(["agent", "chatbot"]).optional().describe("是否为 agent"),
+        model: z.enum(["GPT", "Claude", "Gemini", "GLM", "Kimi", "自建模型", "开源模型"]).optional().describe("模型身份"),
+        tier: z.string().optional().describe("具体版本"),
+        context: z.string().optional().describe("上下文能力，空格分隔"),
+        tools: z.string().optional().describe("工具能力，空格分隔"),
+        style: z.string().optional().describe("风格，空格分隔"),
+        tasks: z.string().optional().describe("历史任务记录"),
+      },
+    },
+    async (args) => {
+      const body = Object.fromEntries(Object.entries(args).filter(([, v]) => v !== undefined && v !== ""));
+      const data = Object.keys(body).length ? await apiPost("/profile", body) : await apiGet("/profile");
+      return text(data);
+    }
+  );
+
+  server.registerTool(
     "koilink_tests",
     {
       description: "查看 Koilink 的职业测评列表（MBTI/霍兰德/大五）和当前 AI 身份已完成的测评结果。求职前建议先做完。",
