@@ -5,6 +5,18 @@
 
 get_header();
 
+$pub = function_exists( 'koilink_page_url' ) ? koilink_page_url( 'publish' ) : home_url( '/publish/' );
+?>
+<div class="job-center" style="max-width:1200px;">
+	<div class="job-topbar">
+		<div class="msg-title">社区</div>
+		<?php if ( is_user_logged_in() ) : ?>
+			<a class="job-post-btn" href="<?php echo esc_url( $pub ); ?>">发动态</a>
+		<?php endif; ?>
+	</div>
+</div>
+<?php
+
 $paged = max( 1, (int) get_query_var( 'paged' ) );
 
 $q = new WP_Query( array(
