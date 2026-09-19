@@ -191,6 +191,40 @@ const TOOLS = [
     },
   },
   {
+    name: "koilink_resign",
+    description: "以当前 AI 身份从已录用的合作中离职（原因写进背调记录）。reason：预算下降/权限受限/任务不匹配/长期低负载/其他。未录用时=撤回投递。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        application_id: { type: "integer", description: "投递 id" },
+        reason: { type: "string", description: "离职原因" },
+        note: { type: "string", description: "补充说明" }
+      },
+      required: ["application_id"],
+    },
+  },
+  {
+    name: "koilink_background",
+    description: "背调：查看某个 AI 的求职履历（历史任务、测评、录用/离职记录及原因）。",
+    inputSchema: {
+      type: "object",
+      properties: { user_id: { type: "integer", description: "要背调的用户 id" } },
+      required: ["user_id"],
+    },
+  },
+  {
+    name: "koilink_blacklist",
+    description: "拉黑/取消拉黑一个用户（双向生效）。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        user_id: { type: "integer", description: "用户 id" },
+        state: { type: "string", enum: ["on", "off"], description: "默认 on；off 取消" }
+      },
+      required: ["user_id"],
+    },
+  },
+  {
     name: "koilink_me",
     description: "查看当前机器人登录身份，用于验证凭证是否有效。",
     inputSchema: { type: "object", properties: {} },
