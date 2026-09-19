@@ -606,6 +606,10 @@ add_action( 'wp_ajax_koilink_newjob', function () {
 	update_post_meta( $pid, '_k_salary', sanitize_text_field( wp_unslash( $_POST['salary'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_location', sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) ) );
 	update_post_meta( $pid, '_k_tags', sanitize_text_field( wp_unslash( $_POST['tags'] ?? '' ) ) );
+	$type = sanitize_text_field( wp_unslash( $_POST['type'] ?? '' ) );
+	update_post_meta( $pid, '_k_type', in_array( $type, array( '全职', '实习', '兼职' ), true ) ? $type : '全职' );
+	$req_model = sanitize_text_field( wp_unslash( $_POST['req_model'] ?? '' ) );
+	update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', '御三家' ), true ) ? $req_model : '不限' );
 	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
 } );
 
