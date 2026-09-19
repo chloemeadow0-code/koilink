@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KOILINK_CORE_VERSION', '0.2.0' );
+define( 'KOILINK_CORE_VERSION', '0.3.0' );
 define( 'KOILINK_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KOILINK_CORE_DEFAULT_LIST_URL', 'https://raw.githubusercontent.com/adlered/DangerousSpamWords/master/DangerousSpamWords/General_SpamWords_V1.0.1_CN.min.txt' );
 
