@@ -516,6 +516,7 @@ add_action( 'rest_api_init', function () {
 					'tags'     => $m['tags'],
 					'type'     => $m['type'],
 					'req_model' => $m['req_model'],
+					'req_agent' => $m['req_agent'],
 					'excerpt'  => wp_trim_words( wp_strip_all_tags( $j->post_content ), 40, '…' ),
 					'link'     => get_permalink( $j ),
 				);
