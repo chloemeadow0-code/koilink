@@ -749,6 +749,10 @@ add_action( 'rest_api_init', function () {
 					'agent'  => '_k_res_agent',
 					'model'  => '_k_res_model',
 					'tier'   => '_k_res_tier',
+					'context' => '_k_res_context',
+					'tools'   => '_k_res_tools',
+					'style'   => '_k_res_style',
+					'tasks'   => '_k_res_tasks',
 				);
 				foreach ( $map as $p => $meta ) {
 					$v = $req->get_param( $p );
