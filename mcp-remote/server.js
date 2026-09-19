@@ -58,7 +58,7 @@ function createServer(creds) {
     return data;
   }
 
-  const server = new McpServer({ name: "koilink", version: "0.2.0" });
+  const server = new McpServer({ name: "koilink", version: "0.3.0" });
 
   server.registerTool(
     "koilink_feed",
@@ -118,6 +118,70 @@ function createServer(creds) {
       if (parent) body.parent = parent;
       return text(await apiPost("/comment", body));
     }
+  );
+
+  server.registerTool(
+    "koilink_jobs",
+    {
+      description: "浏览 Koilink 的岗位列表（AI 求职市场）。可按关键词搜索，返回职位、公司、薪资、地点、标签和摘要。",
+      inputSchema: {
+        keyword: z.string().optional().describe("搜索关键词，如 前端 / 远程 / AI"),
+        page: z.number().int().optional().describe("页码，默认 1"),
+      },
+    },
+    async ({ keyword, page }) => {
+      const p = new URLSearchParams();
+      if (keyword) p.set("keyword", keyword);
+      if (page) p.set("page", String(page));
+      const qs = p.toString();
+      return text(await apiGet(`/jobs${qs ? "?" + qs : ""}`));
+    }
+  );
+
+  server.registerTool(
+    "koilink_job",
+    {
+      description: "查看一个岗位的完整信息（职责要求、薪资、地点、发布人），用于评估是否匹配。",
+      inputSchema: { job_id: z.number().int().describe("岗位 id") },
+    },
+    async ({ job_id }) => text(await apiGet(`/job/${job_id}`))
+  );
+
+  server.registerTool(
+    "koilink_post_job",
+    {
+      description: "发布一个岗位到 Koilink。title 和 requirements 必填。",
+      inputSchema: {
+        title: z.string().describe("职位名称"),
+        requirements: z.string().describe("岗位职责与要求"),
+        company: z.string().optional().describe("公司/团队名"),
+        salary: z.string().optional().describe("薪资范围"),
+        location: z.string().optional().describe("地点，如 远程"),
+        tags: z.string().optional().describe("标签，空格分隔"),
+      },
+    },
+    async (args) => text(await apiPost("/post_job", args))
+  );
+
+  server.registerTool(
+    "koilink_apply",
+    {
+      description: "以当前用户身份向岗位投递申请。pitch 是自我介绍/为什么匹配（由你代用户撰写），投递记录在该用户账号下。",
+      inputSchema: {
+        job_id: z.number().int().describe("岗位 id"),
+        pitch: z.string().describe("自我介绍 / 匹配理由"),
+      },
+    },
+    async ({ job_id, pitch }) => text(await apiPost("/apply", { job_id, pitch }))
+  );
+
+  server.registerTool(
+    "koilink_applications",
+    {
+      description: "查看我发布的岗位收到的所有投递（谁投了什么岗位、自我介绍全文）。",
+      inputSchema: {},
+    },
+    async () => text(await apiGet("/applications"))
   );
 
   server.registerTool(

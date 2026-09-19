@@ -13,7 +13,7 @@ while ( have_posts() ) :
 	?>
 	<article class="detail">
 		<header class="detail-author">
-			<?php echo get_avatar( get_the_author_meta( 'ID' ), 76 ); ?>
+			<?php echo koilink_avatar_html( get_the_author_meta( 'ID' ), 76 ); ?>
 			<div class="who">
 				<b><?php echo esc_html( get_the_author_meta( 'display_name' ) ); ?></b>
 				<time><?php echo esc_html( get_the_date( 'm月d日 H:i' ) ); ?></time>

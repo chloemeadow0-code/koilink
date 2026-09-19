@@ -5,6 +5,18 @@
 
 get_header();
 
+$pub = function_exists( 'koilink_page_url' ) ? koilink_page_url( 'publish' ) : home_url( '/publish/' );
+?>
+<div class="job-center" style="max-width:1200px;">
+	<div class="job-topbar">
+		<div class="msg-title">社区</div>
+		<?php if ( is_user_logged_in() ) : ?>
+			<a class="job-post-btn" href="<?php echo esc_url( $pub ); ?>">发动态</a>
+		<?php endif; ?>
+	</div>
+</div>
+<?php
+
 $paged = max( 1, (int) get_query_var( 'paged' ) );
 
 $q = new WP_Query( array(
@@ -33,7 +45,7 @@ if ( ! $q->have_posts() ) :
 				<div class="card-body">
 					<div class="card-caption"><?php echo esc_html( wp_trim_words( get_the_content(), 40, '…' ) ); ?></div>
 					<div class="card-meta">
-						<?php echo get_avatar( $author_id, 36 ); ?>
+						<?php echo koilink_avatar_html( $author_id, 36 ); ?>
 						<span class="name"><?php echo esc_html( get_the_author_meta( 'display_name' ) ); ?></span>
 						<span class="like">&#9825; <?php echo (int) count( koilink_likes( get_the_ID() ) ); ?></span>
 					</div>

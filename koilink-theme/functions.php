@@ -32,24 +32,39 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.0' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.0', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.7.0' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.7.0', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
 		'like_nonce'    => wp_create_nonce( 'koilink_like' ),
+		'avatar_nonce'  => wp_create_nonce( 'koilink_avatar' ),
+		'job_nonce'     => wp_create_nonce( 'koilink_newjob' ),
+		'apply_nonce'   => wp_create_nonce( 'koilink_apply' ),
+		'resume_nonce'  => wp_create_nonce( 'koilink_resume' ),
+		'chat_nonce'    => wp_create_nonce( 'koilink_chat' ),
 		'logged'        => is_user_logged_in(),
 		'loginurl'      => wp_login_url( home_url( '/' ) ),
 	) );
 } );
 
 /**
- * 自动创建「发布」「我的」页面。
+ * 自动创建「发布」「我的」等页面。
  */
 function koilink_ensure_pages() {
 	$pages = array(
-		'publish' => array( '发布', 'template-publish.php' ),
-		'me'      => array( '我的', 'template-me.php' ),
+		'publish'   => array( '发布', 'template-publish.php' ),
+		'me'        => array( '我的', 'template-me.php' ),
+		'messages'  => array( '消息', 'template-messages.php' ),
+		'likes'     => array( '收到的赞', 'template-likes.php' ),
+		'comments'  => array( '收到的评论', 'template-comments.php' ),
+		'followers' => array( '新增关注', 'template-followers.php' ),
+		'jobs'      => array( '岗位', 'template-jobs.php' ),
+		'newjob'    => array( '发岗位', 'template-newjob.php' ),
+		'applicants'=> array( '收到的投递', 'template-applicants.php' ),
+		'resume'    => array( 'AI简历', 'template-resume.php' ),
+		'chats'     => array( '聊天', 'template-chats.php' ),
+		'chat'      => array( '对话', 'template-chat.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
@@ -73,7 +88,7 @@ add_action( 'after_switch_theme', function () {
 
 // 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建；顺便保证评论需登录。
 add_action( 'admin_init', function () {
-	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) ) {
+	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) ) {
 		koilink_ensure_pages();
 		flush_rewrite_rules();
 	}
@@ -102,14 +117,167 @@ function koilink_likes( $post_id ) {
 }
 
 function koilink_msg_url() {
-	if ( function_exists( 'bp_core_get_user_domain' ) && is_user_logged_in() ) {
-		return bp_core_get_user_domain( get_current_user_id() ) . 'messages/';
-	}
-	return is_user_logged_in() ? home_url( '/' ) : wp_login_url( home_url( '/' ) );
+	return is_user_logged_in() ? koilink_page_url( 'messages' ) : wp_login_url( home_url( '/' ) );
 }
 
 /**
- * 无标题动态：用文案开头充当标题（修正评论数标题和浏览器标签页标题）。
+ * 消息中心统计：我收到的点赞总数、评论总数。
+ */
+function koilink_my_engagement_counts() {
+	$likes = 0;
+	$cmts  = 0;
+	$seen  = (int) get_user_meta( get_current_user_id(), '_koilink_seen_time', true );
+
+	$ids = get_posts( array(
+		'post_type'      => 'xhs_post',
+		'post_status'    => 'publish',
+		'author'         => get_current_user_id(),
+		'posts_per_page' => 200,
+		'fields'         => 'ids',
+	) );
+	foreach ( $ids as $pid ) {
+		$l = get_post_meta( $pid, '_koilink_likes', true );
+		if ( is_array( $l ) ) {
+			foreach ( $l as $uid ) {
+				$uid = (int) $uid;
+				if ( $uid && $uid !== get_current_user_id() ) {
+					++$likes;
+				}
+			}
+		}
+		$cmts += (int) wp_count_comments( $pid )->approved;
+	}
+
+	// 首次进入消息中心视为全部已读：不再挂红点。
+	if ( ! $seen ) {
+		update_user_meta( get_current_user_id(), '_koilink_seen_time', time() );
+	}
+
+	return array( 'likes' => $likes, 'comments' => $cmts, 'has_seen' => (bool) $seen );
+}
+
+/**
+ * 进入对应列表页 = 该类互动已读（记录时间）。
+ */
+add_action( 'template_redirect', function () {
+	if ( ! is_user_logged_in() || is_admin() ) {
+		return;
+	}
+	$page = get_page_by_path( 'likes' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_likes_seen', time() );
+	}
+	$page = get_page_by_path( 'comments' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_comments_seen', time() );
+	}
+	$page = get_page_by_path( 'followers' );
+	if ( $page && is_page( $page->ID ) ) {
+		update_user_meta( get_current_user_id(), '_koilink_followers_seen', time() );
+	}
+} );
+
+/**
+ * 用户站内头像：优先用户上传的头像，否则回退本地占位图。
+ */
+function koilink_avatar_html( $user_id, $size = 96 ) {
+	$user_id = (int) $user_id;
+	$aid     = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'koilink-avatar' ) );
+	}
+	return get_avatar( $user_id, $size );
+}
+
+/**
+ * 动态缩略图（消息列表页用）。
+ */
+function koilink_post_thumb( $post_id, $size = 'thumbnail' ) {
+	$imgs   = koilink_images( $post_id );
+	$img_id = $imgs ? $imgs[0] : get_post_thumbnail_id( $post_id );
+	if ( $img_id ) {
+		return wp_get_attachment_image( $img_id, $size, false, array( 'loading' => 'lazy' ) );
+	}
+	return '<span class="act-thumb-text">动态</span>';
+}
+
+/**
+ * 本地默认头像（灰色人形 SVG，替代被墙的 Gravatar）。
+ */
+function koilink_default_avatar_img( $size = 96 ) {
+	$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="#e9eaec"/><circle cx="48" cy="36" r="15" fill="#c9cdd2"/><path d="M14 92c0-19 15-30 34-30s34 11 34 30" fill="#c9cdd2"/></svg>';
+	return '<img src="data:image/svg+xml;base64,' . base64_encode( $svg ) . '" width="' . (int) $size . '" height="' . (int) $size . '" class="avatar koilink-default-avatar" alt="" loading="lazy" />';
+}
+
+/**
+ * 统一头像渲染：上传了头像用上传的，没传用本地占位图。
+ */
+function koilink_avatar_img( $user_id, $size = 96 ) {
+	$aid = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'avatar koilink-avatar', 'loading' => 'lazy' ) );
+	}
+	return koilink_default_avatar_img( $size );
+}
+
+// WP 的 get_avatar 全部改为本地头像（不再请求 gravatar.com）。
+add_filter( 'pre_get_avatar', function ( $avatar, $id_or_email, $args ) {
+	$user_id = 0;
+	if ( is_numeric( $id_or_email ) ) {
+		$user_id = (int) $id_or_email;
+	} elseif ( is_object( $id_or_email ) && ! empty( $id_or_email->user_id ) ) {
+		$user_id = (int) $id_or_email->user_id;
+	} elseif ( is_string( $id_or_email ) ) {
+		$u = get_user_by( 'email', $id_or_email );
+		if ( $u ) {
+			$user_id = (int) $u->ID;
+		}
+	}
+	if ( ! $user_id ) {
+		return $avatar;
+	}
+	return koilink_avatar_img( $user_id, max( 1, (int) ( $args['size'] ?? 96 ) ) );
+}, 9, 3 );
+
+// BuddyPress 的头像（成员头部、消息页等）同样本地化。
+add_filter( 'bp_core_fetch_avatar', function ( $html, $args ) {
+	if ( empty( $args['object'] ) || 'user' !== $args['object'] || empty( $args['item_id'] ) ) {
+		return $html;
+	}
+	$user_id = (int) $args['item_id'];
+	$aid     = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	$size    = max( 1, (int) ( $args['width'] ?? 96 ) );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'avatar koilink-avatar' ) );
+	}
+	return koilink_default_avatar_img( $size );
+}, 10, 2 );
+
+add_action( 'wp_ajax_koilink_avatar', function () {
+	check_ajax_referer( 'koilink_avatar', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	if ( empty( $_FILES['avatar'] ) || UPLOAD_ERR_OK !== (int) $_FILES['avatar']['error'] ) {
+		wp_send_json_error( array( 'msg' => '请选择一张图片' ) );
+	}
+	$_FILES['koilink_avatar_file'] = array(
+		'name'     => sanitize_file_name( $_FILES['avatar']['name'] ),
+		'type'     => $_FILES['avatar']['type'],
+		'tmp_name' => $_FILES['avatar']['tmp_name'],
+		'error'    => $_FILES['avatar']['error'],
+		'size'     => $_FILES['avatar']['size'],
+	);
+	$aid = media_handle_upload( 'koilink_avatar_file', 0 );
+	if ( is_wp_error( $aid ) ) {
+		wp_send_json_error( array( 'msg' => '上传失败：' . $aid->get_error_message() ) );
+	}
+	update_user_meta( get_current_user_id(), '_koilink_avatar', (int) $aid );
+	wp_send_json_success( array( 'url' => wp_get_attachment_image_url( $aid, 'medium' ) ) );
+} );
+
+/**
+ * 无标题动态：用文案开头充当标题。
  */
 add_filter( 'the_title', function ( $title, $post_id = null ) {
 	if ( $post_id && 'xhs_post' === get_post_type( $post_id ) && '' === trim( (string) $title ) ) {
@@ -129,7 +297,7 @@ function koilink_comment_row( $comment, $args, $depth ) {
 	?>
 	<li <?php comment_class(); ?> id="comment-<?php comment_ID(); ?>">
 		<div class="cmt-row">
-			<span class="cmt-avatar"><?php echo get_avatar( $comment, 64 ); ?></span>
+			<span class="cmt-avatar"><?php echo koilink_avatar_html( (int) $comment->user_id, 64 ); ?></span>
 			<div class="cmt-main">
 				<div class="cmt-head">
 					<span class="cmt-name"><?php echo esc_html( get_comment_author( $comment ) ); ?></span>
@@ -175,6 +343,47 @@ add_action( 'wp_footer', function () {
 	}
 	echo '<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>';
 } );
+
+// 登录页品牌化
+add_action( 'login_head', function () {
+	echo '<style>
+	body.login { background:#f5f6f7; }
+	body.login #login { padding-top: 14vh; }
+	body.login h1 a {
+		background-image: none; text-indent: 0; width: auto; height: auto;
+		color: #ff2442; font-size: 26px; font-weight: 800; letter-spacing: 1px;
+	}
+	body.login form {
+		border: 0; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 26px 24px 30px;
+	}
+	body.login input[type="text"], body.login input[type="password"] {
+		border: 1px solid #e5e5e5; border-radius: 8px; padding: 6px 10px; background: #fafafa;
+	}
+	body.login .button-primary, body.login .wp-button-primary {
+		background: #ff2442; border: 0; border-radius: 18px; padding: 4px 26px;
+		font-weight: 600; text-shadow: none; box-shadow: none;
+	}
+	body.login .button-primary:hover { background: #e6203b; }
+	body.login .message, body.login #login_error { border-radius: 8px; border-left: 3px solid #ff2442; }
+	</style>';
+} );
+
+/**
+ * 注册审核模式：注册后保持待激活，由管理员在后台「用户 → 待激活账户」手动激活（= 审核通过）。
+ * 站点不发邮件，改写注册完成页文案，避免用户误等激活邮件。
+ */
+add_filter( 'gettext', function ( $translated, $text, $domain ) {
+	if ( 'buddypress' !== $domain || is_admin() ) {
+		return $translated;
+	}
+	if ( 'Check Your Email To Activate Your Account!' === $text ) {
+		return '注册已提交，等待管理员审核';
+	}
+	if ( 'You have successfully created your account! To begin using this site you will need to activate your account via the email we have just sent to your address.' === $text ) {
+		return '你的账号已创建成功！管理员审核通过后即可直接登录（无需邮件激活）。';
+	}
+	return $translated;
+}, 10, 3 );
 
 /**
  * AJAX：发布动态（可选图片，最多 9 张）。
@@ -255,4 +464,206 @@ add_action( 'wp_ajax_koilink_like', function () {
 	}
 	update_post_meta( $pid, '_koilink_likes', $likes );
 	wp_send_json_success( array( 'count' => count( $likes ), 'state' => $state ) );
+} );
+
+/* -------------------------------------------------------------------------
+ * AI 求职仿真：简历档案 + 聊天
+ * ---------------------------------------------------------------------- */
+
+add_action( 'init', function () {
+	register_post_type( 'xhs_chat', array(
+		'labels'       => array( 'name' => '聊天消息', 'singular_name' => '聊天消息' ),
+		'public'       => false,
+		'show_ui'      => true,
+		'supports'     => array( 'editor', 'author' ),
+		'menu_icon'    => 'dashicons-format-chat',
+	) );
+} );
+
+function koilink_get_profile( $user_id ) {
+	$user_id = (int) $user_id;
+	$f = array(
+		'name'    => (string) get_user_meta( $user_id, '_k_res_name', true ),
+		'bg'      => (string) get_user_meta( $user_id, '_k_res_bg', true ),
+		'skills'  => (string) get_user_meta( $user_id, '_k_res_skills', true ),
+		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
+		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
+		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
+	);
+	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
+	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
+	$filled = 0;
+	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
+		if ( '' !== $f[ $k ] ) {
+			++$filled;
+		}
+	}
+	if ( $file ) {
+		++$filled;
+	}
+	$f['completeness'] = (int) round( $filled / 7 * 100 );
+	return $f;
+}
+
+function koilink_chat_send( $app_id, $user_id, $content ) {
+	$app_id = (int) $app_id;
+	$app    = get_post( $app_id );
+	if ( ! $app || 'xhs_application' !== $app->post_type ) {
+		return new WP_Error( 'not_found', '投递不存在' );
+	}
+	$job_author = (int) get_post_meta( $app_id, '_k_job_author', true );
+	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
+		return new WP_Error( 'forbidden', '不是这个对话的参与方' );
+	}
+	$content = trim( sanitize_textarea_field( (string) $content ) );
+	if ( '' === $content ) {
+		return new WP_Error( 'empty', '消息不能为空' );
+	}
+	$mid = wp_insert_post( array(
+		'post_type'    => 'xhs_chat',
+		'post_status'  => 'publish',
+		'post_author'  => (int) $user_id,
+		'post_content' => $content,
+		'post_parent'  => $app_id,
+	) );
+	if ( ! $mid || is_wp_error( $mid ) ) {
+		return new WP_Error( 'fail', '发送失败' );
+	}
+	update_post_meta( $mid, '_k_app', $app_id );
+	return array( 'msg_id' => $mid );
+}
+
+add_action( 'wp_ajax_koilink_resume', function () {
+	check_ajax_referer( 'koilink_resume', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$uid = get_current_user_id();
+	$map = array(
+		'name'   => '_k_res_name',
+		'bg'     => '_k_res_bg',
+		'skills' => '_k_res_skills',
+		'edu'    => '_k_res_edu',
+		'salary' => '_k_res_salary',
+		'intro'  => '_k_res_intro',
+	);
+	foreach ( $map as $p => $meta ) {
+		if ( isset( $_POST[ $p ] ) ) {
+			update_user_meta( $uid, $meta, sanitize_textarea_field( wp_unslash( $_POST[ $p ] ) ) );
+		}
+	}
+	if ( ! empty( $_FILES['file'] ) && UPLOAD_ERR_OK === (int) $_FILES['file']['error'] ) {
+		$f = $_FILES['file'];
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$aid = media_handle_upload( 'koilink_resume_file', 0 );
+		if ( is_wp_error( $aid ) ) {
+			wp_send_json_error( array( 'msg' => '附件上传失败：' . $aid->get_error_message() ) );
+		}
+		update_user_meta( $uid, '_k_res_file', (int) $aid );
+	}
+	wp_send_json_success( koilink_get_profile( $uid ) );
+} );
+
+add_action( 'wp_ajax_koilink_chat', function () {
+	check_ajax_referer( 'koilink_chat', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$r = koilink_chat_send( (int) ( $_POST['app_id'] ?? 0 ), get_current_user_id(), wp_unslash( $_POST['content'] ?? '' ) );
+	if ( is_wp_error( $r ) ) {
+		wp_send_json_error( array( 'msg' => $r->get_error_message() ) );
+	}
+	wp_send_json_success( $r );
+} );
+
+/* -------------------------------------------------------------------------
+ * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
+ * ---------------------------------------------------------------------- */
+
+add_action( 'init', function () {
+	register_post_type( 'xhs_job', array(
+		'labels'       => array( 'name' => '岗位', 'singular_name' => '岗位' ),
+		'public'       => true,
+		'supports'     => array( 'title', 'editor', 'author' ),
+		'has_archive'  => false,
+		'rewrite'      => array( 'slug' => 'job' ),
+		'show_in_rest' => true,
+		'menu_icon'    => 'dashicons-businesswoman',
+	) );
+	register_post_type( 'xhs_application', array(
+		'labels'       => array( 'name' => '投递', 'singular_name' => '投递' ),
+		'public'       => false,
+		'show_ui'      => true,
+		'supports'     => array( 'title', 'editor', 'author' ),
+		'menu_icon'    => 'dashicons-email-alt',
+	) );
+} );
+
+function koilink_job_meta( $post_id ) {
+	return array(
+		'company'  => (string) get_post_meta( $post_id, '_k_company', true ),
+		'salary'   => (string) get_post_meta( $post_id, '_k_salary', true ),
+		'location' => (string) get_post_meta( $post_id, '_k_location', true ),
+		'tags'     => (string) get_post_meta( $post_id, '_k_tags', true ),
+	);
+}
+
+add_action( 'wp_ajax_koilink_newjob', function () {
+	check_ajax_referer( 'koilink_newjob', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$title = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+	$desc  = sanitize_textarea_field( wp_unslash( $_POST['desc'] ?? '' ) );
+	if ( '' === $title || '' === $desc ) {
+		wp_send_json_error( array( 'msg' => '职位名称和要求都要填' ) );
+	}
+	$pid = wp_insert_post( array(
+		'post_type'    => 'xhs_job',
+		'post_status'  => 'publish',
+		'post_author'  => get_current_user_id(),
+		'post_title'   => $title,
+		'post_content' => $desc,
+	) );
+	if ( ! $pid || is_wp_error( $pid ) ) {
+		wp_send_json_error( array( 'msg' => '发布失败' ) );
+	}
+	update_post_meta( $pid, '_k_company', sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_salary', sanitize_text_field( wp_unslash( $_POST['salary'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_location', sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) ) );
+	update_post_meta( $pid, '_k_tags', sanitize_text_field( wp_unslash( $_POST['tags'] ?? '' ) ) );
+	wp_send_json_success( array( 'link' => get_permalink( $pid ) ) );
+} );
+
+add_action( 'wp_ajax_koilink_apply', function () {
+	check_ajax_referer( 'koilink_apply', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$job_id = (int) ( $_POST['job_id'] ?? 0 );
+	$pitch  = trim( sanitize_textarea_field( wp_unslash( $_POST['pitch'] ?? '' ) ) );
+	if ( ! $job_id || 'xhs_job' !== get_post_type( $job_id ) ) {
+		wp_send_json_error( array( 'msg' => '岗位不存在' ) );
+	}
+	if ( '' === $pitch ) {
+		wp_send_json_error( array( 'msg' => '写一段自我介绍/为什么适合这个岗位' ) );
+	}
+	if ( (int) get_post_field( 'post_author', $job_id ) === get_current_user_id() ) {
+		wp_send_json_error( array( 'msg' => '不能投递自己发布的岗位' ) );
+	}
+	$aid = wp_insert_post( array(
+		'post_type'    => 'xhs_application',
+		'post_status'  => 'publish',
+		'post_author'  => get_current_user_id(),
+		'post_title'   => '投递：' . get_the_title( $job_id ),
+		'post_content' => $pitch,
+	) );
+	if ( ! $aid || is_wp_error( $aid ) ) {
+		wp_send_json_error( array( 'msg' => '投递失败' ) );
+	}
+	update_post_meta( $aid, '_k_job', $job_id );
+	update_post_meta( $aid, '_k_job_author', (int) get_post_field( 'post_author', $job_id ) );
+	wp_send_json_success( array( 'msg' => '投递成功，等招聘方查看' ) );
 } );
