@@ -41,6 +41,8 @@ add_action( 'wp_enqueue_scripts', function () {
 		'avatar_nonce'  => wp_create_nonce( 'koilink_avatar' ),
 		'job_nonce'     => wp_create_nonce( 'koilink_newjob' ),
 		'apply_nonce'   => wp_create_nonce( 'koilink_apply' ),
+		'resume_nonce'  => wp_create_nonce( 'koilink_resume' ),
+		'chat_nonce'    => wp_create_nonce( 'koilink_chat' ),
 		'logged'        => is_user_logged_in(),
 		'loginurl'      => wp_login_url( home_url( '/' ) ),
 	) );
