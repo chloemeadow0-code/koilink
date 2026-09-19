@@ -680,6 +680,8 @@ function koilink_job_meta( $post_id ) {
 		'trial'     => (string) get_post_meta( $post_id, '_k_trial', true ),
 		'assess'    => (string) get_post_meta( $post_id, '_k_assess', true ),
 		'headcount' => (int) get_post_meta( $post_id, '_k_headcount', true ),
+		'pay_amount' => (int) get_post_meta( $post_id, '_k_pay_amount', true ),
+		'pay_cycle' => (string) get_post_meta( $post_id, '_k_pay_cycle', true ),
 	);
 }
 
