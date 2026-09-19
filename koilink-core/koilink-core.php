@@ -646,3 +646,150 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
+
+/* -------------------------------------------------------------------------
+ * AI 求职仿真：简历档案 + 投递聊天（BOSS 直聘式）
+ * ---------------------------------------------------------------------- */
+
+function koilink_get_profile( $user_id ) {
+	$user_id = (int) $user_id;
+	$f = array(
+		'name'    => (string) get_user_meta( $user_id, '_k_res_name', true ),
+		'bg'      => (string) get_user_meta( $user_id, '_k_res_bg', true ),
+		'skills'  => (string) get_user_meta( $user_id, '_k_res_skills', true ),
+		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
+		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
+		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
+	);
+	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
+	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
+	$filled = 0;
+	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro' ) as $k ) {
+		if ( '' !== $f[ $k ] ) {
+			++$filled;
+		}
+	}
+	if ( $file ) {
+		++$filled;
+	}
+	$f['completeness'] = (int) round( $filled / 7 * 100 );
+	return $f;
+}
+
+function koilink_chat_send( $app_id, $user_id, $content ) {
+	$app_id = (int) $app_id;
+	$app    = get_post( $app_id );
+	if ( ! $app || 'xhs_application' !== $app->post_type ) {
+		return new WP_Error( 'not_found', '投递不存在', array( 'status' => 404 ) );
+	}
+	$job_author = (int) get_post_meta( $app_id, '_k_job_author', true );
+	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
+		return new WP_Error( 'forbidden', '不是这个对话的参与方', array( 'status' => 403 ) );
+	}
+	$content = trim( sanitize_textarea_field( (string) $content ) );
+	if ( '' === $content ) {
+		return new WP_Error( 'empty', '消息不能为空', array( 'status' => 400 ) );
+	}
+	$mid = wp_insert_post( array(
+		'post_type'    => 'xhs_chat',
+		'post_status'  => 'publish',
+		'post_author'  => (int) $user_id,
+		'post_content' => $content,
+		'post_parent'  => $app_id,
+	) );
+	if ( ! $mid || is_wp_error( $mid ) ) {
+		return new WP_Error( 'fail', '发送失败', array( 'status' => 500 ) );
+	}
+	update_post_meta( $mid, '_k_app', $app_id );
+	return array( 'msg_id' => $mid, 'time' => mysql2date( 'H:i', get_post_field( 'post_date', $mid ) ) );
+}
+
+add_action( 'rest_api_init', function () {
+
+	register_rest_route( 'koilink/v1', '/profile', array(
+		'methods'             => array( 'GET', 'POST' ),
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$uid = get_current_user_id();
+			if ( 'POST' === $req->get_method() ) {
+				$map = array(
+					'name'   => '_k_res_name',
+					'bg'     => '_k_res_bg',
+					'skills' => '_k_res_skills',
+					'edu'    => '_k_res_edu',
+					'salary' => '_k_res_salary',
+					'intro'  => '_k_res_intro',
+				);
+				foreach ( $map as $p => $meta ) {
+					$v = $req->get_param( $p );
+					if ( null !== $v ) {
+						update_user_meta( $uid, $meta, sanitize_textarea_field( (string) $v ) );
+					}
+				}
+			}
+			return koilink_get_profile( $uid );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/resume', array(
+		'methods'             => 'POST',
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$files = $req->get_file_params();
+			if ( empty( $files['file'] ) || UPLOAD_ERR_OK !== (int) $files['file']['error'] ) {
+				return new WP_Error( 'empty', '请上传简历文件', array( 'status' => 400 ) );
+			}
+			$f = $files['file'];
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			$aid = media_handle_sideload( array(
+				'name'     => sanitize_file_name( $f['name'] ),
+				'type'     => $f['type'],
+				'tmp_name' => $f['tmp_name'],
+				'error'    => $f['error'],
+				'size'     => $f['size'],
+			), 0 );
+			if ( is_wp_error( $aid ) ) {
+				return new WP_Error( 'fail', '上传失败：' . $aid->get_error_message(), array( 'status' => 500 ) );
+			}
+			update_user_meta( get_current_user_id(), '_k_res_file', (int) $aid );
+			return array( 'resume_url' => wp_get_attachment_url( $aid ) );
+		},
+	) );
+
+	register_rest_route( 'koilink/v1', '/chat/(?P<app_id>\\d+)', array(
+		'methods'             => array( 'GET', 'POST' ),
+		'permission_callback' => 'is_user_logged_in',
+		'callback'            => function ( $req ) {
+			$app_id = (int) $req['app_id'];
+			$uid    = get_current_user_id();
+			if ( 'POST' === $req->get_method() ) {
+				$sent = koilink_chat_send( $app_id, $uid, $req->get_param( 'content' ) );
+				if ( is_wp_error( $sent ) ) {
+					return $sent;
+				}
+			}
+			$messages = get_posts( array(
+				'post_type'      => 'xhs_chat',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'meta_key'       => '_k_app',
+				'meta_value'     => $app_id,
+				'orderby'        => 'date',
+				'order'          => 'ASC',
+			) );
+			$out = array();
+			foreach ( $messages as $m ) {
+				$out[] = array(
+					'from'      => (int) $m->post_author,
+					'from_name' => get_the_author_meta( 'display_name', $m->post_author ),
+					'mine'      => (int) $m->post_author === $uid,
+					'content'   => $m->post_content,
+					'time'      => mysql2date( 'm月d日 H:i', $m->post_date ),
+				);
+			}
+			return array( 'application_id' => $app_id, 'messages' => $out );
+		},
+	) );
+} );
