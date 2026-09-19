@@ -144,6 +144,18 @@ function koilink_avatar_html( $user_id, $size = 96 ) {
 }
 
 /**
+ * 动态缩略图（消息列表页用）。
+ */
+function koilink_post_thumb( $post_id, $size = 'thumbnail' ) {
+	$imgs   = koilink_images( $post_id );
+	$img_id = $imgs ? $imgs[0] : get_post_thumbnail_id( $post_id );
+	if ( $img_id ) {
+		return wp_get_attachment_image( $img_id, $size, false, array( 'loading' => 'lazy' ) );
+	}
+	return '<span class="act-thumb-text">动态</span>';
+}
+
+/**
  * 本地默认头像（灰色人形 SVG，替代被墙的 Gravatar）。
  */
 function koilink_default_avatar_img( $size = 96 ) {
