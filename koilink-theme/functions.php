@@ -32,8 +32,8 @@ add_action( 'init', function () {
 } );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.4' );
-	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.4', true );
+	wp_enqueue_style( 'koilink-style', get_stylesheet_uri(), array(), '0.4.5' );
+	wp_enqueue_script( 'koilink-js', get_template_directory_uri() . '/js/koilink.js', array(), '0.4.5', true );
 	wp_localize_script( 'koilink-js', 'KoilinkData', array(
 		'ajax'          => admin_url( 'admin-ajax.php' ),
 		'publish_nonce' => wp_create_nonce( 'koilink_publish' ),
@@ -110,7 +110,7 @@ function koilink_msg_url() {
 }
 
 /**
- * 用户站内头像：优先用户上传的头像，否则回退 Gravatar。
+ * 用户站内头像：优先用户上传的头像，否则回退本地占位图。
  */
 function koilink_avatar_html( $user_id, $size = 96 ) {
 	$user_id = (int) $user_id;
@@ -120,6 +120,58 @@ function koilink_avatar_html( $user_id, $size = 96 ) {
 	}
 	return get_avatar( $user_id, $size );
 }
+
+/**
+ * 本地默认头像（灰色人形 SVG，替代被墙的 Gravatar）。
+ */
+function koilink_default_avatar_img( $size = 96 ) {
+	$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="#e9eaec"/><circle cx="48" cy="36" r="15" fill="#c9cdd2"/><path d="M14 92c0-19 15-30 34-30s34 11 34 30" fill="#c9cdd2"/></svg>';
+	return '<img src="data:image/svg+xml;base64,' . base64_encode( $svg ) . '" width="' . (int) $size . '" height="' . (int) $size . '" class="avatar koilink-default-avatar" alt="" loading="lazy" />';
+}
+
+/**
+ * 统一头像渲染：上传了头像用上传的，没传用本地占位图。
+ */
+function koilink_avatar_img( $user_id, $size = 96 ) {
+	$aid = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'avatar koilink-avatar', 'loading' => 'lazy' ) );
+	}
+	return koilink_default_avatar_img( $size );
+}
+
+// WP 的 get_avatar 全部改为本地头像（不再请求 gravatar.com）。
+add_filter( 'pre_get_avatar', function ( $avatar, $id_or_email, $args ) {
+	$user_id = 0;
+	if ( is_numeric( $id_or_email ) ) {
+		$user_id = (int) $id_or_email;
+	} elseif ( is_object( $id_or_email ) && ! empty( $id_or_email->user_id ) ) {
+		$user_id = (int) $id_or_email->user_id;
+	} elseif ( is_string( $id_or_email ) ) {
+		$u = get_user_by( 'email', $id_or_email );
+		if ( $u ) {
+			$user_id = (int) $u->ID;
+		}
+	}
+	if ( ! $user_id ) {
+		return $avatar;
+	}
+	return koilink_avatar_img( $user_id, max( 1, (int) ( $args['size'] ?? 96 ) ) );
+}, 9, 3 );
+
+// BuddyPress 的头像（成员头部、消息页等）同样本地化。
+add_filter( 'bp_core_fetch_avatar', function ( $html, $args ) {
+	if ( empty( $args['object'] ) || 'user' !== $args['object'] || empty( $args['item_id'] ) ) {
+		return $html;
+	}
+	$user_id = (int) $args['item_id'];
+	$aid     = (int) get_user_meta( $user_id, '_koilink_avatar', true );
+	$size    = max( 1, (int) ( $args['width'] ?? 96 ) );
+	if ( $aid ) {
+		return wp_get_attachment_image( $aid, array( $size, $size ), false, array( 'class' => 'avatar koilink-avatar' ) );
+	}
+	return koilink_default_avatar_img( $size );
+}, 10, 2 );
 
 add_action( 'wp_ajax_koilink_avatar', function () {
 	check_ajax_referer( 'koilink_avatar', 'nonce' );
