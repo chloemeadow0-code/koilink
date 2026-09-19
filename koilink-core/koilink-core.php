@@ -639,6 +639,7 @@ add_action( 'rest_api_init', function () {
 					'applicant' => get_the_author_meta( 'display_name', $a->post_author ),
 					'pitch'     => wp_strip_all_tags( $a->post_content ),
 					'time'      => mysql2date( 'c', $a->post_date ),
+					'chat'      => '/chat/' . (int) $a->ID,
 				);
 			}
 			return array( 'total' => count( $items ), 'items' => $items );
