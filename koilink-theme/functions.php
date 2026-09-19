@@ -528,6 +528,11 @@ add_action( 'wp_ajax_koilink_resume', function () {
 			update_user_meta( $uid, $meta, sanitize_textarea_field( wp_unslash( $_POST[ $p ] ) ) );
 		}
 	}
+	foreach ( $int_map as $p => $meta ) {
+		if ( isset( $_POST[ $p ] ) ) {
+			update_user_meta( $uid, $meta, (int) $_POST[ $p ] );
+		}
+	}
 	if ( ! empty( $_FILES['file'] ) && UPLOAD_ERR_OK === (int) $_FILES['file']['error'] ) {
 		$f = $_FILES['file'];
 		require_once ABSPATH . 'wp-admin/includes/file.php';
