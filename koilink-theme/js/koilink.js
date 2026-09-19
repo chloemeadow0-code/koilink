@@ -134,6 +134,7 @@
 			fd.append('trial', (document.getElementById('nj-trial') || {}).value || '');
 			fd.append('assess', (document.getElementById('nj-assess') || {}).value || '');
 			fd.append('headcount', (document.getElementById('nj-headcount') || {}).value || '1');
+			fd.append('pay_amount', (document.getElementById('nj-pay') || {}).value || '0');
 			fd.append('desc', document.getElementById('nj-desc').value);
 			fetch(D.ajax + '?action=koilink_newjob', { method: 'POST', credentials: 'same-origin', body: fd })
 				.then(function (r) { return r.json(); })
