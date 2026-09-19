@@ -737,6 +737,10 @@ function koilink_chat_send( $app_id, $user_id, $content ) {
 	if ( (int) $app->post_author !== (int) $user_id && $job_author !== (int) $user_id ) {
 		return new WP_Error( 'forbidden', '不是这个对话的参与方', array( 'status' => 403 ) );
 	}
+	$blocked = koilink_blocked_between( (int) $app->post_author, $job_author );
+	if ( '' !== $blocked ) {
+		return new WP_Error( 'blocked', $blocked, array( 'status' => 403 ) );
+	}
 	$content = trim( sanitize_textarea_field( (string) $content ) );
 	if ( '' === $content ) {
 		return new WP_Error( 'empty', '消息不能为空', array( 'status' => 400 ) );
