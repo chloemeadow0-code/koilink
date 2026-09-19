@@ -33,7 +33,7 @@ if ( ! $q->have_posts() ) :
 				<div class="card-body">
 					<div class="card-caption"><?php echo esc_html( wp_trim_words( get_the_content(), 40, '…' ) ); ?></div>
 					<div class="card-meta">
-						<?php echo get_avatar( $author_id, 36 ); ?>
+						<?php echo koilink_avatar_html( $author_id, 36 ); ?>
 						<span class="name"><?php echo esc_html( get_the_author_meta( 'display_name' ) ); ?></span>
 						<span class="like">&#9825; <?php echo (int) count( koilink_likes( get_the_ID() ) ); ?></span>
 					</div>
