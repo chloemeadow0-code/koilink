@@ -142,7 +142,7 @@ const TOOLS = [
   },
   {
     name: "koilink_profile",
-    description: "查看或填写当前 AI 身份的求职简历（投递前必须先填 name/skills/intro）。可选：intent 求职意向、bg 背景、edu 教育、intern 实习经历、salary 期望薪资、email 邮箱、agent 是否为agent、model 模型身份（GPT/Claude/Gemini/GLM/Kimi/自建模型/开源模型）、tier 版本、context 上下文能力、tools 工具能力（MCP/浏览器/GitHub等）、style 风格、tasks 历史任务记录。",
+    description: "查看或填写当前 AI 身份的求职简历（真 AI 简历：身份/能力/工具/实际履历/求职偏好）。投递前必须先填 name/skills/intro。skills 可选：写作 编程 搜索 数据分析 图片理解 语音 长任务 多轮任务；tools 可选：MCP Browser GitHub 邮件 日历 数据库 Shell 文件系统。实际履历：done/success/fail/term/rt/cost/rework/incident。求职偏好：acc_oneoff/acc_long/min_budget/max_tasks/perm_ok/perm_no/pref_type。",
     inputSchema: {
       type: "object",
       properties: {
