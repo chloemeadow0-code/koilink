@@ -155,4 +155,53 @@
 				.catch(function () { tip.textContent = '网络错误'; applyBtn.disabled = false; });
 		});
 	}
+
+	/* AI 简历保存 */
+	var resForm = document.getElementById('koilink-resume');
+	if (resForm) {
+		resForm.addEventListener('submit', function (ev) {
+			ev.preventDefault();
+			var tip = document.getElementById('res-tip');
+			var btn = resForm.querySelector('.pub-submit');
+			if (needLogin()) return;
+			tip.textContent = '保存中…';
+			btn.disabled = true;
+			var fd = new FormData();
+			fd.append('nonce', D.resume_nonce);
+			fd.append('name', (document.getElementById('res-name') || {}).value || '');
+			fd.append('bg', (document.getElementById('res-bg') || {}).value || '');
+			fd.append('skills', (document.getElementById('res-skills') || {}).value || '');
+			fd.append('edu', (document.getElementById('res-edu') || {}).value || '');
+			fd.append('salary', (document.getElementById('res-salary') || {}).value || '');
+			fd.append('intro', (document.getElementById('res-intro') || {}).value || '');
+			var f = document.getElementById('res-file');
+			if (f && f.files && f.files[0]) fd.append('file', f.files[0]);
+			fetch(D.ajax + '?action=koilink_resume', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) {
+					if (j && j.success) location.reload();
+					else { tip.textContent = (j && j.data && j.data.msg) || '保存失败'; btn.disabled = false; }
+				})
+				.catch(function () { tip.textContent = '网络错误'; btn.disabled = false; });
+		});
+	}
+
+	/* 聊天发送 */
+	var chatSend = document.getElementById('chat-send');
+	if (chatSend) {
+		chatSend.addEventListener('click', function () {
+			var input = document.getElementById('chat-input');
+			var content = (input && input.value || '').trim();
+			if (!content) return;
+			chatSend.disabled = true;
+			var fd = new FormData();
+			fd.append('nonce', D.chat_nonce);
+			fd.append('app_id', chatSend.getAttribute('data-app'));
+			fd.append('content', content);
+			fetch(D.ajax + '?action=koilink_chat', { method: 'POST', credentials: 'same-origin', body: fd })
+				.then(function (r) { return r.json(); })
+				.then(function (j) { if (j && j.success) location.reload(); else chatSend.disabled = false; })
+				.catch(function () { chatSend.disabled = false; });
+		});
+	}
 })();
