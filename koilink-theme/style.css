@@ -3,7 +3,7 @@ Theme Name: Koilink
 Theme URI: https://github.com/sue1231511/koilink
 Author: Koilink
 Description: 小红书流程主题：底部 Tab（首页/＋发布/消息/我的），发布器选图+文案，详情页点赞+评论，首页双列瀑布流。
-Version: 0.3.1
+Version: 0.4.1
 License: GPL-2.0-or-later
 Text Domain: koilink
 */
@@ -408,4 +408,86 @@ a { color: inherit; }
 	color: #b3b3b3;
 	font-size: 12px;
 	text-align: center;
+}
+
+/* 注册 / 激活页（BuddyPress 表单品牌化） */
+#buddypress.bp-nouveau {
+	max-width: 560px;
+	margin: 16px auto;
+	background: #fff;
+	border-radius: 10px;
+	padding: 20px 16px 24px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+}
+
+#buddypress.bp-nouveau h2,
+#buddypress.bp-nouveau h3 {
+	font-size: 17px;
+	margin: 14px 0 10px;
+}
+
+#buddypress.bp-nouveau .bp-signup-form label,
+#buddypress.bp-nouveau .form-wrap label,
+#buddypress.bp-nouveau label {
+	display: block;
+	font-size: 13px;
+	color: #666;
+	margin: 12px 0 4px;
+}
+
+#buddypress.bp-nouveau input[type="text"],
+#buddypress.bp-nouveau input[type="email"],
+#buddypress.bp-nouveau input[type="password"],
+#buddypress.bp-nouveau select,
+#buddypress.bp-nouveau textarea {
+	width: 100%;
+	border: 1px solid #e5e5e5;
+	border-radius: 8px;
+	padding: 10px 12px;
+	font: inherit;
+	background: #fafafa;
+}
+
+#buddypress.bp-nouveau input[type="text"]:focus,
+#buddypress.bp-nouveau input[type="email"]:focus,
+#buddypress.bp-nouveau input[type="password"]:focus,
+#buddypress.bp-nouveau textarea:focus {
+	border-color: #ff2442;
+	background: #fff;
+	outline: none;
+}
+
+#buddypress.bp-nouveau .submit,
+#buddypress.bp-nouveau .ac-form .submit {
+	padding: 14px 0 0;
+}
+
+#buddypress.bp-nouveau .submit input[type="submit"],
+#buddypress.bp-nouveau input#signup_submit {
+	background: #ff2442;
+	color: #fff;
+	border: 0;
+	font-size: 15px;
+	font-weight: 600;
+	padding: 10px 0;
+	width: 100%;
+	border-radius: 20px;
+	cursor: pointer;
+}
+
+#buddypress.bp-nouveau .pw-strength-result,
+#buddypress.bp-nouveau #password-strength {
+	border-radius: 6px;
+	padding: 4px 10px;
+	margin-top: 6px;
+}
+
+#buddypress.bp-nouveau .registration-quick-links,
+#buddypress.bp-nouveau .bp-messages {
+	border-radius: 8px;
+}
+
+/* 登录页内的提示块 */
+.cmt-login, #buddypress.bp-nouveau .bp-feedback {
+	font-size: 13px;
 }
