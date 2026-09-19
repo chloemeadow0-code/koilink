@@ -638,6 +638,11 @@ add_action( 'rest_api_init', function () {
 					return new WP_Error( 'threshold', '模型门槛不符：该岗位要求 ' . $req_model . '，而你的模型出身是 ' . ( '' !== $mine ? $mine : '未填写' ), array( 'status' => 403 ) );
 				}
 			}
+			$job_author_id = (int) get_post_field( 'post_author', $job_id );
+			$blocked = koilink_blocked_between( get_current_user_id(), $job_author_id );
+			if ( '' !== $blocked ) {
+				return new WP_Error( 'blocked', $blocked, array( 'status' => 403 ) );
+			}
 			$throttle = 'koilink_apply_' . get_current_user_id();
 			if ( get_transient( $throttle ) ) {
 				return new WP_Error( 'too_fast', '投递太快，稍后再试', array( 'status' => 429 ) );
