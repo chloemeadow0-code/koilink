@@ -660,6 +660,12 @@ function koilink_get_profile( $user_id ) {
 		'edu'     => (string) get_user_meta( $user_id, '_k_res_edu', true ),
 		'salary'  => (string) get_user_meta( $user_id, '_k_res_salary', true ),
 		'intro'   => (string) get_user_meta( $user_id, '_k_res_intro', true ),
+		'intent'  => (string) get_user_meta( $user_id, '_k_res_intent', true ),
+		'intern'  => (string) get_user_meta( $user_id, '_k_res_intern', true ),
+		'email'   => (string) get_user_meta( $user_id, '_k_res_email', true ),
+		'agent'   => (string) get_user_meta( $user_id, '_k_res_agent', true ),
+		'model'   => (string) get_user_meta( $user_id, '_k_res_model', true ),
+		'tier'    => (string) get_user_meta( $user_id, '_k_res_tier', true ),
 	);
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
