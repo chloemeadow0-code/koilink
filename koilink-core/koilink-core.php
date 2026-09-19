@@ -499,6 +499,10 @@ add_action( 'rest_api_init', function () {
 			if ( '' !== $kw ) {
 				$args['s'] = $kw;
 			}
+			$type = trim( (string) $req->get_param( 'type' ) );
+			if ( in_array( $type, array( '全职', '实习', '兼职' ), true ) ) {
+				$args['meta_query'] = array( array( 'key' => '_k_type', 'value' => $type ) );
+			}
 			$q     = new WP_Query( $args );
 			$items = array();
 			foreach ( $q->posts as $j ) {
