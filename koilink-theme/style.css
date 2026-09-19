@@ -861,3 +861,49 @@ a { color: inherit; }
 	border-radius: 50%;
 	margin-top: 4px;
 }
+
+/* 列表页（收到的赞/评论/新增关注） */
+.list-page {
+	max-width: 600px;
+	margin: 14px auto;
+	padding: 20px 16px 24px;
+}
+
+.list-title { font-size: 18px; margin: 0 0 12px; }
+.list-sub { font-size: 14px; color: #666; margin: 16px 0 8px; }
+.list-note { margin-top: 12px; font-size: 13px; }
+.list-note a { color: #ff2442; }
+
+.act-thumb { flex: none; width: 56px; }
+.act-thumb img {
+	width: 56px;
+	height: 56px;
+	object-fit: cover;
+	border-radius: 8px;
+	display: block;
+}
+
+.act-thumb-text {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	background: #f5f6f7;
+	color: #bbb;
+	font-size: 11px;
+	border-radius: 8px;
+}
+
+.pill-btn {
+	flex: none;
+	border: 1px solid #ff2442;
+	color: #ff2442;
+	border-radius: 16px;
+	padding: 5px 14px;
+	font-size: 13px;
+}
+
+.msg-time-inline { color: #bbb; font-size: 12px; font-weight: 400; margin-left: 6px; }
+.cmt-content { white-space: normal !important; }
+.msg-row.cmt-row-page { align-items: flex-start; }
