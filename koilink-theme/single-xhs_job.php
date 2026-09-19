@@ -15,6 +15,7 @@ while ( have_posts() ) :
 		<h1><?php the_title(); ?></h1>
 		<div class="job-meta-row">
 			<span class="j-salary"><?php echo esc_html( $m['salary'] ); ?></span>
+			<?php if ( $m['pay_amount'] ) : ?><span class="j-tag"><?php echo esc_html( '结算：' . $m['pay_amount'] . ' 元/' . ( '一次性' === $m['pay_cycle'] ? '单' : ( '每日' === $m['pay_cycle'] ? '天' : '月' ) ) ); ?></span><?php endif; ?>
 			<span class="j-type-badge"><?php echo esc_html( $m['type'] ); ?></span>
 			<?php if ( $m['frequency'] ) : ?><span><?php echo esc_html( $m['frequency'] ); ?></span><?php endif; ?>
 			<?php if ( $m['longterm'] && '是' === $m['longterm'] ) : ?><span>长期</span><?php endif; ?>
