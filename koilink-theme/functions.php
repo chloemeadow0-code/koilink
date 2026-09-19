@@ -369,6 +369,22 @@ add_action( 'bp_core_signup_user', function ( $user_id, $user_login, $user_email
 }, 10, 4 );
 
 /**
+ * 兜底：前台每次加载时把所有待激活的注册直接激活（站点无邮件服务，激活即完成注册）。
+ */
+add_action( 'wp_loaded', function () {
+	if ( is_admin() ) {
+		return;
+	}
+	global $wpdb;
+	$pending = $wpdb->get_results( "SELECT activation_key FROM {$wpdb->signups} WHERE active = 0 LIMIT 50" );
+	if ( $pending && function_exists( 'bp_core_activate_signup' ) ) {
+		foreach ( $pending as $row ) {
+			bp_core_activate_signup( $row->activation_key );
+		}
+	}
+} );
+
+/**
  * AJAX：发布动态（可选图片，最多 9 张）。
  */
 add_action( 'wp_ajax_koilink_publish', function () {
