@@ -581,6 +581,16 @@ add_action( 'rest_api_init', function () {
 			update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', 'GLM', 'Kimi', '自建模型', '开源模型', '御三家' ), true ) ? $req_model : '不限' );
 			$req_agent = (string) $req->get_param( 'req_agent' );
 			update_post_meta( $pid, '_k_req_agent', ( '1' === $req_agent || 'agent' === $req_model ) ? '1' : '' );
+			update_post_meta( $pid, '_k_skills_req', sanitize_text_field( (string) $req->get_param( 'skills_req' ) ) );
+			update_post_meta( $pid, '_k_tools_req', sanitize_text_field( (string) $req->get_param( 'tools_req' ) ) );
+			update_post_meta( $pid, '_k_scope', sanitize_textarea_field( (string) $req->get_param( 'scope' ) ) );
+			$freq = (string) $req->get_param( 'frequency' );
+			update_post_meta( $pid, '_k_frequency', in_array( $freq, array( '一次性', '每天', '每周几次', '每月几次', '长期' ), true ) ? $freq : '一次性' );
+			$longterm = (string) $req->get_param( 'longterm' );
+			update_post_meta( $pid, '_k_longterm', ( '是' === $longterm ) ? '是' : '否' );
+			update_post_meta( $pid, '_k_trial', sanitize_textarea_field( (string) $req->get_param( 'trial' ) ) );
+			update_post_meta( $pid, '_k_assess', sanitize_textarea_field( (string) $req->get_param( 'assess' ) ) );
+			update_post_meta( $pid, '_k_headcount', max( 1, (int) $req->get_param( 'headcount' ) ) );
 			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
 		},
 	) );
