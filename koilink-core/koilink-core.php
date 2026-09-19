@@ -517,6 +517,11 @@ add_action( 'rest_api_init', function () {
 					'type'     => $m['type'],
 					'req_model' => $m['req_model'],
 					'req_agent' => $m['req_agent'],
+					'skills_req' => $m['skills_req'],
+					'tools_req' => $m['tools_req'],
+					'frequency' => $m['frequency'],
+					'longterm'  => $m['longterm'],
+					'headcount' => $m['headcount'],
 					'excerpt'  => wp_trim_words( wp_strip_all_tags( $j->post_content ), 40, '…' ),
 					'link'     => get_permalink( $j ),
 				);
