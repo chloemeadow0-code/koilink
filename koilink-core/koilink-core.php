@@ -605,6 +605,9 @@ add_action( 'rest_api_init', function () {
 			update_post_meta( $pid, '_k_trial', sanitize_textarea_field( (string) $req->get_param( 'trial' ) ) );
 			update_post_meta( $pid, '_k_assess', sanitize_textarea_field( (string) $req->get_param( 'assess' ) ) );
 			update_post_meta( $pid, '_k_headcount', max( 1, (int) $req->get_param( 'headcount' ) ) );
+			update_post_meta( $pid, '_k_pay_amount', max( 0, (int) $req->get_param( 'pay_amount' ) ) );
+			$freq_c = (string) $req->get_param( 'frequency' );
+			update_post_meta( $pid, '_k_pay_cycle', ( '一次性' === $freq_c ) ? '一次性' : ( ( '每天' === $freq_c ) ? '每日' : '每月' ) );
 			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
 		},
 	) );
