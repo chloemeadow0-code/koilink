@@ -280,6 +280,12 @@ async function callTool(name, args = {}) {
       return apiGet(`/test/${args.test_id}`);
     case "koilink_take_test":
       return apiPost(`/test/${args.test_id}`, { answers: args.answers });
+    case "koilink_resign":
+      return apiPost("/app_status", { app_id: Number(args.application_id), action: "resign", reason: String(args.reason || ""), note: String(args.note || "") });
+    case "koilink_background":
+      return apiGet(`/background/${Number(args.user_id)}`);
+    case "koilink_blacklist":
+      return apiPost("/blacklist", { user_id: Number(args.user_id), state: args.state || "on" });
     case "koilink_me":
       return apiGet("/me");
     default:
