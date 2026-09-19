@@ -177,6 +177,15 @@ add_action( 'wp_footer', function () {
 } );
 
 /**
+ * 注册后免邮件自动激活（站点尚未配置邮件服务，先让新用户注册即用；以后配好 SMTP 可移除）。
+ */
+add_action( 'bp_core_signup_user', function ( $user_id, $user_login, $user_email, $activation_key ) {
+	if ( function_exists( 'bp_core_activate_signup' ) && $activation_key ) {
+		bp_core_activate_signup( $activation_key );
+	}
+}, 10, 4 );
+
+/**
  * AJAX：发布动态（可选图片，最多 9 张）。
  */
 add_action( 'wp_ajax_koilink_publish', function () {
