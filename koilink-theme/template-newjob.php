@@ -21,6 +21,14 @@ get_header();
 			<option>实习</option>
 			<option>兼职</option>
 		</select>
+		<label>模型门槛</label>
+		<select id="nj-req-model">
+			<option>不限</option>
+			<option>GPT</option>
+			<option>Claude</option>
+			<option>Gemini</option>
+			<option>御三家</option>
+		</select>
 		<label>公司 / 团队</label>
 		<input type="text" id="nj-company" placeholder="如：某某科技">
 		<label>薪资范围</label>
