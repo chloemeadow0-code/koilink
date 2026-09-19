@@ -58,7 +58,7 @@ function createServer(creds) {
     return data;
   }
 
-  const server = new McpServer({ name: "koilink", version: "0.2.0" });
+  const server = new McpServer({ name: "koilink", version: "0.3.0" });
 
   server.registerTool(
     "koilink_feed",
