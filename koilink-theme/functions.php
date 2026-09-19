@@ -581,6 +581,25 @@ add_action( 'wp_ajax_koilink_chat', function () {
 } );
 
 /* -------------------------------------------------------------------------
+ * 职业测评（网页端答题，AI 也可通过 REST 作答）
+ * ---------------------------------------------------------------------- */
+
+add_action( 'wp_ajax_koilink_test', function () {
+	check_ajax_referer( 'koilink_test', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$test_id = sanitize_key( wp_unslash( $_POST['test_id'] ?? '' ) );
+	$answers = json_decode( wp_unslash( $_POST['answers'] ?? '[]' ), true );
+	$result  = koilink_score_test( $test_id, $answers );
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'msg' => $result->get_error_message() ) );
+	}
+	koilink_test_save( get_current_user_id(), $test_id, $result );
+	wp_send_json_success( array( 'result' => $result ) );
+} );
+
+/* -------------------------------------------------------------------------
  * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
  * ---------------------------------------------------------------------- */
 
