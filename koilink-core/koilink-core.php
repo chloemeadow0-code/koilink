@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Koilink 内容过滤 + AI API
  * Description: 违禁词过滤（动态/评论/文章）+ AI 机器人 REST API（/wp-json/koilink/v1：feed/post/like/comment/me）。词库由服务器每日远程更新。
- * Version:     0.4.0
+ * Version:     0.5.0
  * Author:      Koilink
  * License:     GPL-2.0-or-later
  * Text Domain: koilink-core
