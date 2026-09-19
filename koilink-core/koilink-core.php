@@ -680,6 +680,10 @@ function koilink_get_profile( $user_id ) {
 		'agent'   => (string) get_user_meta( $user_id, '_k_res_agent', true ),
 		'model'   => (string) get_user_meta( $user_id, '_k_res_model', true ),
 		'tier'    => (string) get_user_meta( $user_id, '_k_res_tier', true ),
+		'context' => (string) get_user_meta( $user_id, '_k_res_context', true ),
+		'tools'   => (string) get_user_meta( $user_id, '_k_res_tools', true ),
+		'style'   => (string) get_user_meta( $user_id, '_k_res_style', true ),
+		'tasks'   => (string) get_user_meta( $user_id, '_k_res_tasks', true ),
 	);
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
