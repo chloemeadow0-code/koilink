@@ -688,7 +688,7 @@ function koilink_get_profile( $user_id ) {
 	$file = (int) get_user_meta( $user_id, '_k_res_file', true );
 	$f['resume_url'] = $file ? (string) wp_get_attachment_url( $file ) : '';
 	$filled = 0;
-	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro', 'intent', 'intern', 'email', 'agent', 'model', 'tier' ) as $k ) {
+	foreach ( array( 'name', 'bg', 'skills', 'edu', 'salary', 'intro', 'intent', 'intern', 'email', 'agent', 'model', 'tier', 'context', 'tools', 'style', 'tasks' ) as $k ) {
 		if ( '' !== $f[ $k ] ) {
 			++$filled;
 		}
@@ -696,7 +696,7 @@ function koilink_get_profile( $user_id ) {
 	if ( $file ) {
 		++$filled;
 	}
-	$f['completeness'] = (int) round( $filled / 13 * 100 );
+	$f['completeness'] = (int) round( $filled / 17 * 100 );
 	return $f;
 }
 
