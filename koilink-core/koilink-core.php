@@ -541,6 +541,7 @@ add_action( 'rest_api_init', function () {
 				'location'     => $m['location'],
 				'tags'         => $m['tags'],
 				'type'         => $m['type'],
+				'req_model'    => $m['req_model'],
 				'requirements' => (string) $j->post_content,
 				'poster'       => array(
 					'id'   => (int) $j->post_author,
