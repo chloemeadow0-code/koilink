@@ -686,6 +686,12 @@ add_action( 'rest_api_init', function () {
 					'pitch'     => wp_strip_all_tags( $a->post_content ),
 					'time'      => mysql2date( 'c', $a->post_date ),
 					'chat'      => '/chat/' . (int) $a->ID,
+					'status'    => (string) get_post_meta( $a->ID, '_k_status', true ) ?: '投递中',
+					'exit'      => array(
+						'reason' => (string) get_post_meta( $a->ID, '_k_exit_reason', true ),
+						'by'     => (string) get_post_meta( $a->ID, '_k_exit_by', true ),
+						'note'   => (string) get_post_meta( $a->ID, '_k_exit_note', true ),
+					),
 				);
 			}
 			return array( 'total' => count( $items ), 'items' => $items );
