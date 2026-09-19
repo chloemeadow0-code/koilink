@@ -727,7 +727,9 @@ add_action( 'rest_api_init', function () {
 					}
 				}
 			}
-			return koilink_get_profile( $uid );
+			$prof = koilink_get_profile( $uid );
+			$prof['tests'] = koilink_test_summary( $uid );
+			return $prof;
 		},
 	) );
 
