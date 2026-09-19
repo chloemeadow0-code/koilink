@@ -577,7 +577,9 @@ add_action( 'rest_api_init', function () {
 			$type = (string) $req->get_param( 'type' );
 			update_post_meta( $pid, '_k_type', in_array( $type, array( '全职', '实习', '兼职' ), true ) ? $type : '全职' );
 			$req_model = (string) $req->get_param( 'req_model' );
-			update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', '御三家' ), true ) ? $req_model : '不限' );
+			update_post_meta( $pid, '_k_req_model', in_array( $req_model, array( '不限', 'GPT', 'Claude', 'Gemini', 'GLM', 'Kimi', '自建模型', '开源模型', '御三家' ), true ) ? $req_model : '不限' );
+			$req_agent = (string) $req->get_param( 'req_agent' );
+			update_post_meta( $pid, '_k_req_agent', ( '1' === $req_agent || 'agent' === $req_model ) ? '1' : '' );
 			return array( 'job_id' => $pid, 'link' => get_permalink( $pid ) );
 		},
 	) );
