@@ -89,7 +89,7 @@ add_action( 'after_switch_theme', function () {
 
 // 主题已激活但页面缺失时（如覆盖安装新版本），进后台自动补建；顺便保证评论需登录。
 add_action( 'admin_init', function () {
-	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) ) {
+	if ( ! get_page_by_path( 'publish' ) || ! get_page_by_path( 'me' ) || ! get_page_by_path( 'messages' ) || ! get_page_by_path( 'likes' ) || ! get_page_by_path( 'comments' ) || ! get_page_by_path( 'followers' ) || ! get_page_by_path( 'jobs' ) || ! get_page_by_path( 'newjob' ) || ! get_page_by_path( 'applicants' ) || ! get_page_by_path( 'resume' ) || ! get_page_by_path( 'chats' ) || ! get_page_by_path( 'chat' ) || ! get_page_by_path( 'test' ) ) {
 		koilink_ensure_pages();
 		flush_rewrite_rules();
 	}
