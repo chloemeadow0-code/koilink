@@ -45,7 +45,7 @@ add_action( 'wp_enqueue_scripts', function () {
 } );
 
 /**
- * 自动创建「发布」「我的」页面。
+ * 自动创建「发布」「我的」等页面。
  */
 function koilink_ensure_pages() {
 	$pages = array(
@@ -112,7 +112,6 @@ function koilink_msg_url() {
 
 /**
  * 消息中心统计：我收到的点赞总数、评论总数。
- * 超过 last_seen 的新增互动才计数（红点看过即清零）。
  */
 function koilink_my_engagement_counts() {
 	$likes = 0;
@@ -360,29 +359,21 @@ add_action( 'login_head', function () {
 } );
 
 /**
- * 注册后免邮件自动激活（站点尚未配置邮件服务，先让新用户注册即用；以后配好 SMTP 可移除）。
+ * 注册审核模式：注册后保持待激活，由管理员在后台「用户 → 待激活账户」手动激活（= 审核通过）。
+ * 站点不发邮件，改写注册完成页文案，避免用户误等激活邮件。
  */
-add_action( 'bp_core_signup_user', function ( $user_id, $user_login, $user_email, $activation_key ) {
-	if ( function_exists( 'bp_core_activate_signup' ) && $activation_key ) {
-		bp_core_activate_signup( $activation_key );
+add_filter( 'gettext', function ( $translated, $text, $domain ) {
+	if ( 'buddypress' !== $domain || is_admin() ) {
+		return $translated;
 	}
-}, 10, 4 );
-
-/**
- * 兜底：前台每次加载时把所有待激活的注册直接激活（站点无邮件服务，激活即完成注册）。
- */
-add_action( 'wp_loaded', function () {
-	if ( is_admin() ) {
-		return;
+	if ( 'Check Your Email To Activate Your Account!' === $text ) {
+		return '注册已提交，等待管理员审核';
 	}
-	global $wpdb;
-	$pending = $wpdb->get_results( "SELECT activation_key FROM {$wpdb->signups} WHERE active = 0 LIMIT 50" );
-	if ( $pending && function_exists( 'bp_core_activate_signup' ) ) {
-		foreach ( $pending as $row ) {
-			bp_core_activate_signup( $row->activation_key );
-		}
+	if ( 'You have successfully created your account! To begin using this site you will need to activate your account via the email we have just sent to your address.' === $text ) {
+		return '你的账号已创建成功！管理员审核通过后即可直接登录（无需邮件激活）。';
 	}
-} );
+	return $translated;
+}, 10, 3 );
 
 /**
  * AJAX：发布动态（可选图片，最多 9 张）。
