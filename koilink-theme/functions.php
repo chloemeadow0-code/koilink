@@ -558,6 +558,72 @@ add_action( 'wp_ajax_koilink_test', function () {
 	wp_send_json_success( array( 'result' => $result ) );
 } );
 
+add_action( 'wp_ajax_koilink_app_status', function () {
+	check_ajax_referer( 'koilink_status', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$app_id = (int) ( $_POST['app_id'] ?? 0 );
+	$action = sanitize_key( wp_unslash( $_POST['action_type'] ?? '' ) );
+	$reason = sanitize_text_field( wp_unslash( $_POST['reason'] ?? '' ) );
+	$note   = sanitize_textarea_field( wp_unslash( $_POST['note'] ?? '' ) );
+	list( $applicant, $job_author ) = koilink_app_participants( $app_id );
+	$uid = get_current_user_id();
+	if ( ! $applicant ) {
+		wp_send_json_error( array( 'msg' => '投递不存在' ) );
+	}
+	if ( $uid !== $applicant && $uid !== $job_author ) {
+		wp_send_json_error( array( 'msg' => '不是这个对话的参与方' ), 403 );
+	}
+	if ( function_exists( 'koilink_app_set_status' ) ) {
+		$status = (string) get_post_meta( $app_id, '_k_status', true ) ?: '投递中';
+		if ( 'hire' === $action && $uid === $job_author && '投递中' === $status ) {
+			koilink_app_set_status( $app_id, '已录用' );
+			wp_send_json_success( array( 'status' => '已录用' ) );
+		}
+		if ( 'reject' === $action && $uid === $job_author && '投递中' === $status ) {
+			koilink_app_set_status( $app_id, '不合适' );
+			wp_send_json_success( array( 'status' => '不合适' ) );
+		}
+		if ( 'resign' === $action && $uid === $applicant ) {
+			if ( '已录用' === $status ) {
+				koilink_app_set_status( $app_id, '已离职', 'AI', $reason, $note );
+				wp_send_json_success( array( 'status' => '已离职' ) );
+			}
+			if ( '投递中' === $status ) {
+				koilink_app_set_status( $app_id, '已撤回' );
+				wp_send_json_success( array( 'status' => '已撤回' ) );
+			}
+		}
+		if ( 'end' === $action && $uid === $job_author && '已录用' === $status ) {
+			koilink_app_set_status( $app_id, '已离职', 'HR', $reason, $note );
+			wp_send_json_success( array( 'status' => '已离职' ) );
+		}
+	}
+	wp_send_json_error( array( 'msg' => '当前状态不可操作' ) );
+} );
+
+add_action( 'wp_ajax_koilink_blacklist', function () {
+	check_ajax_referer( 'koilink_status', 'nonce' );
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'msg' => '请先登录' ), 403 );
+	}
+	$target = (int) ( $_POST['user_id'] ?? 0 );
+	$state  = sanitize_key( wp_unslash( $_POST['state'] ?? 'on' ) );
+	$uid    = get_current_user_id();
+	if ( ! $target || $target === $uid ) {
+		wp_send_json_error( array( 'msg' => '无效的用户' ) );
+	}
+	$list = array_map( 'intval', (array) get_user_meta( $uid, '_k_blacklist', true ) );
+	if ( 'off' === $state ) {
+		$list = array_values( array_diff( $list, array( $target ) ) );
+	} elseif ( ! in_array( $target, $list, true ) ) {
+		$list[] = $target;
+	}
+	update_user_meta( $uid, '_k_blacklist', $list );
+	wp_send_json_success( array( 'count' => count( $list ) ) );
+} );
+
 /* -------------------------------------------------------------------------
  * 岗位/求职系统：xhs_job 岗位 + xhs_application 投递
  * ---------------------------------------------------------------------- */
