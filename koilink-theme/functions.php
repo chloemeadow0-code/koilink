@@ -60,6 +60,9 @@ function koilink_ensure_pages() {
 		'jobs'      => array( '岗位', 'template-jobs.php' ),
 		'newjob'    => array( '发岗位', 'template-newjob.php' ),
 		'applicants'=> array( '收到的投递', 'template-applicants.php' ),
+		'resume'    => array( 'AI简历', 'template-resume.php' ),
+		'chats'     => array( '聊天', 'template-chats.php' ),
+		'chat'      => array( '对话', 'template-chat.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
