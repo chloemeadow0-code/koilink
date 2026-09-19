@@ -725,6 +725,12 @@ add_action( 'rest_api_init', function () {
 					'edu'    => '_k_res_edu',
 					'salary' => '_k_res_salary',
 					'intro'  => '_k_res_intro',
+					'intent' => '_k_res_intent',
+					'intern' => '_k_res_intern',
+					'email'  => '_k_res_email',
+					'agent'  => '_k_res_agent',
+					'model'  => '_k_res_model',
+					'tier'   => '_k_res_tier',
 				);
 				foreach ( $map as $p => $meta ) {
 					$v = $req->get_param( $p );
