@@ -70,5 +70,7 @@ if ( function_exists( 'bp_core_get_user_domain' ) ) {
 			?>
 		</div>
 	<?php endif; ?>
+
+	<a class="logout-btn" href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>">退出登录</a>
 </div>
 <?php get_footer(); ?>
