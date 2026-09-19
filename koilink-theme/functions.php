@@ -49,8 +49,9 @@ add_action( 'wp_enqueue_scripts', function () {
  */
 function koilink_ensure_pages() {
 	$pages = array(
-		'publish' => array( '发布', 'template-publish.php' ),
-		'me'      => array( '我的', 'template-me.php' ),
+		'publish'  => array( '发布', 'template-publish.php' ),
+		'me'       => array( '我的', 'template-me.php' ),
+		'messages' => array( '消息', 'template-messages.php' ),
 	);
 	foreach ( $pages as $slug => $conf ) {
 		if ( ! get_page_by_path( $slug ) ) {
